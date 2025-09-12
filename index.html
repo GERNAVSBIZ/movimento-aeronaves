@@ -180,9 +180,9 @@
                                 <h3 class="font-medium text-center text-gray-600 mb-2">Movimento por Hora</h3>
                                 <canvas id="hourlyFlightsChart"></canvas>
                             </div>
-                            <div class="text-center mt-2 text-sm">
-                                <span class="font-medium text-gray-600">Operador(es) no Pico:</span>
-                                <span id="pico-operador" class="font-bold text-blue-600">-</span>
+                            <div class="mt-4 p-3 bg-blue-50 rounded-lg text-center border border-blue-200">
+                                <p class="text-sm font-medium text-gray-700">Operador(es) no Turno de Pico</p>
+                                <p id="pico-operador" class="font-bold text-lg text-blue-700 mt-1">-</p>
                             </div>
                         </div>
                     </div>
@@ -397,10 +397,10 @@
                 };
 
                 try {
-                    const trimmedLine = line.trim();
-                    const lastSpaceIndex = trimmedLine.lastIndexOf(' ');
-                    if (lastSpaceIndex !== -1) {
-                         record.responsavel = trimmedLine.substring(lastSpaceIndex + 1);
+                    // Robustly get the last word as the operator
+                    const parts = line.trim().split(/\s+/);
+                    if (parts.length > 0) {
+                        record.responsavel = parts[parts.length - 1];
                     }
                    
                     record.matricula = line.substring(15, 22).trim();
