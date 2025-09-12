@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análise de Movimento Aeronáutico</title>
+    <title>nálise de Movimento Aeronáutico</title>
     <!-- Tailwind CSS para um design moderno e responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Biblioteca Chart.js para visualização de estatísticas -->
@@ -114,7 +114,7 @@
                 <!-- Card de Filtros -->
                 <div class="bg-white p-6 rounded-xl shadow-md">
                     <h2 class="text-xl font-semibold mb-4 border-b pb-2 flex items-center">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-green-500"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-green-500"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                         Filtros de Pesquisa
                     </h2>
                     <div class="space-y-4">
@@ -185,7 +185,7 @@
                             Registros de Voo
                         </h2>
                         <button id="downloadCsvButton" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-300 text-sm flex items-center">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                             Download CSV
                         </button>
                     </div>
@@ -370,28 +370,74 @@
 
         // --- LÓGICA DE PARSE E UPLOAD ---
         function parseDataFile(fileContent) {
-            const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50);
+            const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50 && !line.startsWith('SBIZAIZ0'));
             const records = [];
+
             for (const line of lines) {
                 try {
-                    const dataStr = line.substring(9, 15), horarioStr = line.substring(40, 44);
+                    // Dados com posição fixa e confiável
+                    const dataStr = line.substring(9, 15);
+                    const matricula = line.substring(15, 22).trim();
+                    const tipo_aeronave = line.substring(22, 27).trim();
+
+                    // Lógica flexível para encontrar horário, destino, regra e pista
+                    const restOfLine = line.substring(27);
+                    const timeMatch = restOfLine.match(/(\d{4})/);
+
+                    if (!timeMatch) {
+                        console.warn("Horário não encontrado, pulando linha:", line);
+                        continue;
+                    }
+
+                    const horarioStr = timeMatch[1];
+                    const timeStartIndexInRest = timeMatch.index;
+                    const timeEndIndexInRest = timeStartIndexInRest + 4;
+                    
+                    const destino = restOfLine.substring(0, timeStartIndexInRest).trim();
+                    const afterTimeStr = restOfLine.substring(timeEndIndexInRest);
+                    
+                    const ruleMatch = afterTimeStr.match(/(IV|VV)/);
+                     if (!ruleMatch) {
+                        console.warn("Regra de voo não encontrada, pulando linha:", line);
+                        continue;
+                    }
+                    const regra_voo = ruleMatch[0];
+                    
+                    // A pista são os caracteres numéricos próximos à regra de voo
+                    const pistaMatch = afterTimeStr.match(/\s(\d{2})\s/);
+                    const pista = pistaMatch ? pistaMatch[1] : '';
+
+                    // Validação final da data e hora
                     const day = dataStr.substring(0, 2), month = dataStr.substring(2, 4), year = `20${dataStr.substring(4, 6)}`;
-                    const hour = horarioStr.substring(0, 2) || '00', minute = horarioStr.substring(2, 4) || '00';
-                    if (parseInt(month) > 12 || parseInt(day) > 31 || parseInt(month) === 0 || parseInt(day) === 0) continue;
+                    const hour = horarioStr.substring(0, 2), minute = horarioStr.substring(2, 4);
+
+                    if (parseInt(month) > 12 || parseInt(day) > 31 || parseInt(month) === 0 || parseInt(day) === 0 || parseInt(hour) > 23 || parseInt(minute) > 59) {
+                        console.warn("Data ou hora com valores inválidos, pulando linha:", line);
+                        continue;
+                    }
+
                     const fullDateTime = new Date(`${year}-${month}-${day}T${hour}:${minute}:00Z`);
-                    if (isNaN(fullDateTime.getTime())) continue;
+                    if (isNaN(fullDateTime.getTime())) {
+                        console.warn("Timestamp inválido, pulando linha:", line);
+                        continue;
+                    }
+
                     records.push({
                         timestamp: fullDateTime,
-                        matricula: line.substring(15, 22).trim(),
-                        tipo_aeronave: line.substring(22, 27).trim(),
-                        destino: line.substring(36, 40).trim() || 'N/A',
-                        regra_voo: line.substring(44, 46).trim(),
-                        pista: line.substring(47, 49).trim()
+                        matricula: matricula,
+                        tipo_aeronave: tipo_aeronave,
+                        destino: destino || 'N/A',
+                        regra_voo: regra_voo,
+                        pista: pista
                     });
-                } catch (e) { console.warn("Linha ignorada:", line, e); }
+
+                } catch (e) {
+                    console.warn("Erro ao processar linha:", line, e);
+                }
             }
             return records;
         }
+
 
         async function uploadData(fileName, records) {
             if (!records || records.length === 0) return;
@@ -440,7 +486,7 @@
             const endDate = document.getElementById('endDate').value;
             const filterValue = document.getElementById('filterValue').value.trim().toUpperCase();
             
-            let q = query(recordsCollectionRef, orderBy("timestamp", "desc"), limit(1000));
+            let q = query(recordsCollectionRef, orderBy("timestamp", "desc"));
             if (startDate) q = query(q, where("timestamp", ">=", new Date(startDate)));
             if (endDate) {
                  const endOfDay = new Date(endDate);
