@@ -431,9 +431,8 @@
 
         // --- LÓGICA DE ESTATÍSTICAS E GRÁFICOS ---
         function renderStats(data) {
-            //... (função inalterada)
             const ruleCounts = data.reduce((acc, flight) => {
-                const rule = flight.regra_voe.includes('IV') ? 'IFR' : 'VFR';
+                const rule = flight.regra_voo.includes('IV') ? 'IFR' : 'VFR';
                 acc[rule] = (acc[rule] || 0) + 1;
                 return acc;
             }, { IFR: 0, VFR: 0 });
