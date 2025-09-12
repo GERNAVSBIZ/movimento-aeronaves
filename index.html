@@ -8,8 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Biblioteca Chart.js para visualização de estatísticas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Ícones da Lucide -->
-    <script src="https://unpkg.com/lucide-react@0.292.0/dist/lucide-react.js"></script>
     <style>
         /* Estilo para um scrollbar mais sutil */
         ::-webkit-scrollbar {
@@ -34,13 +32,46 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <div id="app" class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
-        <header class="flex items-center justify-between mb-6">
+    <!-- Container da Tela de Login -->
+    <div id="login-container" class="flex items-center justify-center min-h-screen">
+        <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-3xl font-bold text-center text-gray-700 mb-2">Bem-vindo</h2>
+            <p class="text-center text-gray-500 mb-6">Acesse para continuar</p>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+                    <input type="password" id="password" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div id="login-error" class="text-red-500 text-sm text-center"></div>
+                <div class="flex items-center justify-between space-x-4 pt-2">
+                    <button type="button" id="register-button" class="w-full justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-500 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Registrar
+                    </button>
+                    <button type="submit" id="login-button" class="w-full justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Entrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Container Principal da Aplicação (inicialmente oculto) -->
+    <div id="app" class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl hidden">
+        <header class="flex flex-wrap items-center justify-between mb-6 gap-4">
             <h1 class="text-3xl font-bold text-gray-700 flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mr-3 text-blue-600"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 1 4 2 2h3l1-1-2-3 2-2 7 7-1.5 1.5.5 3c.1.5.6.9 1.1.8l.5-.2c.4-.3.6-.7.5-1.2Z"/></svg>
                 Análise de Tráfego Aéreo
             </h1>
-            <div id="auth-status" class="text-sm text-gray-500">Conectando...</div>
+            <div id="auth-status" class="flex items-center gap-4 text-sm">
+                <span id="user-email" class="text-gray-600"></span>
+                <button id="logout-button" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition duration-300 text-sm">
+                    Sair
+                </button>
+            </div>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -132,8 +163,7 @@
                                 </tr>
                             </thead>
                             <tbody id="dataTableBody">
-                                <!-- Linhas serão inseridas dinamicamente -->
-                                <tr><td colspan="6" class="text-center p-8">Carregando dados...</td></tr>
+                                <tr><td colspan="6" class="text-center p-8">Aguardando login...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -146,14 +176,18 @@
     <script type="module">
         // Importações do SDK do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
-            getFirestore, collection, getDocs, writeBatch, query, where, orderBy, limit, onSnapshot 
+            getAuth, 
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, doc, writeBatch, query, where, orderBy, limit, onSnapshot 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIGURAÇÃO E INICIALIZAÇÃO ---
-        
-        // Configuração do Firebase com as chaves fornecidas.
         const firebaseConfig = {
             apiKey: "AIzaSyBO0qk_81i9wrZPi3o_2SnPxOItB65cQeA",
             authDomain: "movimento-aeronaves.firebaseapp.com",
@@ -164,69 +198,92 @@
             measurementId: "G-XG0F0WK0K1"
         };
         const appId = firebaseConfig.projectId;
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        let dbCollection; // Referência à coleção de dados
-        let userId; // ID do usuário autenticado
-        let currentFlightData = []; // Cache local dos dados exibidos
-        let unsubscribe; // Função para cancelar o listener do onSnapshot
-
-        // Gráficos
+        // --- VARIÁVEIS DE ESTADO ---
+        let dbCollection;
+        let currentFlightData = [];
+        let unsubscribe;
         let flightsByRuleChart, flightsByDestChart;
+        
+        // Elementos da UI
+        const loginContainer = document.getElementById('login-container');
+        const appContainer = document.getElementById('app');
+        const userEmailSpan = document.getElementById('user-email');
+        const loginErrorDiv = document.getElementById('login-error');
 
-        // --- LÓGICA DE AUTENTICAÇÃO E INICIALIZAÇÃO ---
-
+        // --- LÓGICA DE AUTENTICAÇÃO E CONTROLE DE UI ---
         onAuthStateChanged(auth, user => {
-            const authStatus = document.getElementById('auth-status');
             if (user) {
-                userId = user.uid;
-                authStatus.textContent = `Conectado (ID: ${userId.substring(0,8)}...)`;
-                authStatus.classList.add('text-green-600');
-                // A coleção é pública dentro do escopo do aplicativo
+                // Usuário está logado
+                loginContainer.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                userEmailSpan.textContent = user.email;
                 dbCollection = collection(db, `/artifacts/${appId}/public/data/flights`);
-                fetchAndRenderData(); // Inicia a busca de dados
+                fetchAndRenderData();
             } else {
-                authStatus.textContent = 'Não autenticado';
-                authStatus.classList.add('text-red-600');
-                signInAnonymously(auth).catch(error => {
-                    console.error("Erro na autenticação anônima:", error);
-                    authStatus.textContent = 'Falha na autenticação';
-                });
+                // Usuário não está logado
+                appContainer.classList.add('hidden');
+                loginContainer.classList.remove('hidden');
+                if (unsubscribe) unsubscribe(); // Para de ouvir os dados
+                renderTable([]); // Limpa a tabela
+                renderStats([]); // Limpa os gráficos
             }
         });
 
-        // --- LÓGICA DE PARSE E UPLOAD ---
+        const handleAuth = async (authFunction, email, password) => {
+            loginErrorDiv.textContent = '';
+            try {
+                await authFunction(auth, email, password);
+            } catch (error) {
+                console.error("Authentication error:", error.code);
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+                    loginErrorDiv.textContent = 'Email ou senha inválidos.';
+                } else if (error.code === 'auth/email-already-in-use') {
+                    loginErrorDiv.textContent = 'Este email já está em uso.';
+                } else {
+                    loginErrorDiv.textContent = 'Ocorreu um erro. Tente novamente.';
+                }
+            }
+        };
 
-        /**
-         * Processa o conteúdo de um arquivo .dat e o converte em um array de objetos de voo.
-         * @param {string} fileContent - O conteúdo textual do arquivo.
-         * @returns {Array<Object>} - Um array com os registros de voo.
-         */
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            handleAuth(signInWithEmailAndPassword, email, password);
+        });
+
+        document.getElementById('register-button').addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if (email && password) {
+                 handleAuth(createUserWithEmailAndPassword, email, password);
+            } else {
+                loginErrorDiv.textContent = 'Preencha email e senha para se registrar.';
+            }
+        });
+
+        document.getElementById('logout-button').addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        // --- LÓGICA DE PARSE E UPLOAD (sem alterações) ---
         function parseDataFile(fileContent) {
             const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50);
             const records = [];
-
             for (const line of lines) {
                 try {
-                    const dataStr = line.substring(9, 15); // DDMMYY
-                    const horarioStr = line.substring(40, 44); // HHmm
-
-                    const day = dataStr.substring(0, 2);
-                    const month = dataStr.substring(2, 4);
-                    const year = `20${dataStr.substring(4, 6)}`;
-                    const hour = horarioStr.substring(0, 2) || '00';
-                    const minute = horarioStr.substring(2, 4) || '00';
-                    
-                    if (parseInt(month) > 12 || parseInt(day) > 31) continue;
-
+                    const dataStr = line.substring(9, 15);
+                    const horarioStr = line.substring(40, 44);
+                    const day = dataStr.substring(0, 2), month = dataStr.substring(2, 4), year = `20${dataStr.substring(4, 6)}`;
+                    const hour = horarioStr.substring(0, 2) || '00', minute = horarioStr.substring(2, 4) || '00';
+                    if (parseInt(month) > 12 || parseInt(day) > 31 || parseInt(month) === 0 || parseInt(day) === 0) continue;
                     const fullDateTime = new Date(`${year}-${month}-${day}T${hour}:${minute}:00Z`);
-
-                    if (isNaN(fullDateTime.getTime())) continue; // Ignora datas inválidas
-
-                    const record = {
+                    if (isNaN(fullDateTime.getTime())) continue;
+                    records.push({
                         aeroporto: line.substring(0, 4).trim(),
                         identificador: line.substring(4, 7).trim(),
                         timestamp: fullDateTime,
@@ -236,8 +293,7 @@
                         regra_voo: line.substring(44, 46).trim(),
                         pista: line.substring(47, 49).trim(),
                         responsavel: line.substring(56, 60).trim()
-                    };
-                    records.push(record);
+                    });
                 } catch (e) {
                     console.warn("Linha ignorada por erro de formatação:", line, e);
                 }
@@ -245,61 +301,38 @@
             return records;
         }
 
-        /**
-         * Salva um lote de registros no Firestore.
-         * @param {Array<Object>} records - Os registros a serem salvos.
-         */
         async function uploadData(records) {
             if (!records || records.length === 0) return;
             const batch = writeBatch(db);
             records.forEach(record => {
-                const docRef = collection(db, dbCollection.path).doc();
+                const docRef = doc(dbCollection);
                 batch.set(docRef, record);
             });
             await batch.commit();
         }
 
-        // --- LÓGICA DE BUSCA E RENDERIZAÇÃO ---
-
-        /**
-         * Constrói e executa a query no Firestore com base nos filtros da UI.
-         */
+        // --- LÓGICA DE BUSCA E RENDERIZAÇÃO (sem alterações) ---
         function fetchAndRenderData() {
-            if (unsubscribe) unsubscribe(); // Cancela o listener anterior para evitar duplicatas
-
+            if (unsubscribe) unsubscribe();
+            if (!dbCollection) return;
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
             const filterValue = document.getElementById('filterValue').value.trim().toUpperCase();
-
             let q = query(dbCollection, orderBy("timestamp", "desc"), limit(500));
-
             if (startDate) q = query(q, where("timestamp", ">=", new Date(startDate)));
             if (endDate) {
                  const endOfDay = new Date(endDate);
                  endOfDay.setUTCHours(23, 59, 59, 999);
                  q = query(q, where("timestamp", "<=", endOfDay));
             }
-            // Filtros de texto - Como o Firestore tem limitações, fazemos um filtro primário
-            // e depois refinamos no client-side para este caso de uso.
-            
             const tableBody = document.getElementById('dataTableBody');
             tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8">Buscando dados...</td></tr>';
-
             unsubscribe = onSnapshot(q, (querySnapshot) => {
                 let flights = [];
-                querySnapshot.forEach((doc) => {
-                    flights.push({ id: doc.id, ...doc.data() });
-                });
-                
-                // Filtro client-side para o campo de texto geral
+                querySnapshot.forEach((doc) => flights.push({ id: doc.id, ...doc.data() }));
                 if (filterValue) {
-                    flights = flights.filter(f => 
-                        f.matricula.includes(filterValue) ||
-                        f.destino.includes(filterValue) ||
-                        f.tipo_aeronave.includes(filterValue)
-                    );
+                    flights = flights.filter(f => f.matricula.includes(filterValue) || f.destino.includes(filterValue) || f.tipo_aeronave.includes(filterValue));
                 }
-                
                 renderTable(flights);
                 renderStats(flights);
             }, (error) => {
@@ -308,25 +341,18 @@
             });
         }
         
-        /**
-         * Renderiza os dados na tabela HTML.
-         * @param {Array<Object>} data - Array de voos para exibir.
-         */
         function renderTable(data) {
             const tableBody = document.getElementById('dataTableBody');
             tableBody.innerHTML = '';
             currentFlightData = data;
-
             if (data.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8">Nenhum registro encontrado com os filtros aplicados.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8">Nenhum registro encontrado.</td></tr>';
                 return;
             }
-
             data.forEach(flight => {
                 const date = new Date(flight.timestamp.seconds * 1000);
                 const formattedDate = date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
                 const formattedTime = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
-
                 const row = `
                     <tr class="bg-white border-b hover:bg-gray-50">
                         <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${formattedDate} ${formattedTime}</td>
@@ -335,87 +361,46 @@
                         <td class="px-4 py-3">${flight.destino}</td>
                         <td class="px-4 py-3">${flight.regra_voo}</td>
                         <td class="px-4 py-3">${flight.pista}</td>
-                    </tr>
-                `;
+                    </tr>`;
                 tableBody.innerHTML += row;
             });
         }
 
-        // --- LÓGICA DE ESTATÍSTICAS E GRÁFICOS ---
-
+        // --- LÓGICA DE ESTATÍSTICAS E GRÁFICOS (sem alterações) ---
         function renderStats(data) {
-            // Voos por Regra
             const ruleCounts = data.reduce((acc, flight) => {
                 const rule = flight.regra_voo.includes('IV') ? 'IFR' : 'VFR';
                 acc[rule] = (acc[rule] || 0) + 1;
                 return acc;
             }, { IFR: 0, VFR: 0 });
-
             if (flightsByRuleChart) flightsByRuleChart.destroy();
             flightsByRuleChart = new Chart(document.getElementById('flightsByRuleChart'), {
                 type: 'doughnut',
-                data: {
-                    labels: ['IFR', 'VFR'],
-                    datasets: [{
-                        data: [ruleCounts.IFR, ruleCounts.VFR],
-                        backgroundColor: ['#3b82f6', '#16a34a'],
-                    }]
-                },
+                data: { labels: ['IFR', 'VFR'], datasets: [{ data: [ruleCounts.IFR, ruleCounts.VFR], backgroundColor: ['#3b82f6', '#16a34a'] }] },
                 options: { responsive: true, maintainAspectRatio: false }
             });
-
-            // Top 5 Destinos
             const destCounts = data.reduce((acc, flight) => {
-                if(flight.destino && flight.destino !== 'N/A') {
-                   acc[flight.destino] = (acc[flight.destino] || 0) + 1;
-                }
+                if(flight.destino && flight.destino !== 'N/A') acc[flight.destino] = (acc[flight.destino] || 0) + 1;
                 return acc;
             }, {});
-
             const sortedDests = Object.entries(destCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-            const destLabels = sortedDests.map(d => d[0]);
-            const destData = sortedDests.map(d => d[1]);
-
             if (flightsByDestChart) flightsByDestChart.destroy();
             flightsByDestChart = new Chart(document.getElementById('flightsByDestChart'), {
                 type: 'bar',
-                data: {
-                    labels: destLabels,
-                    datasets: [{
-                        label: 'Nº de Voos',
-                        data: destData,
-                        backgroundColor: '#8b5cf6',
-                    }]
-                },
+                data: { labels: sortedDests.map(d => d[0]), datasets: [{ label: 'Nº de Voos', data: sortedDests.map(d => d[1]), backgroundColor: '#8b5cf6' }] },
                 options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
             });
         }
         
-        // --- LÓGICA DE EXPORTAÇÃO CSV ---
-        
+        // --- LÓGICA DE EXPORTAÇÃO CSV (sem alterações) ---
         function exportToCsv() {
-            if (currentFlightData.length === 0) {
-                alert("Não há dados para exportar.");
-                return;
-            }
-
+            if (currentFlightData.length === 0) return alert("Não há dados para exportar.");
             const headers = ["timestamp_utc", "matricula", "tipo_aeronave", "destino", "regra_voo", "pista", "responsavel"];
             let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
-
             currentFlightData.forEach(flight => {
                 const date = new Date(flight.timestamp.seconds * 1000).toISOString();
-                const row = [
-                    date,
-                    flight.matricula,
-                    flight.tipo_aeronave,
-                    flight.destino,
-                    flight.regra_voo,
-                    flight.pista,
-                    flight.responsavel
-                ].join(",");
-                csvContent += row + "\n";
+                csvContent += [date, flight.matricula, flight.tipo_aeronave, flight.destino, flight.regra_voo, flight.pista, flight.responsavel].join(",") + "\n";
             });
-
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
@@ -425,69 +410,40 @@
             document.body.removeChild(link);
         }
 
-        // --- EVENT LISTENERS ---
-
+        // --- EVENT LISTENERS (sem alterações na lógica principal) ---
         document.getElementById('uploadButton').addEventListener('click', () => {
             const fileInput = document.getElementById('dataFile');
             const statusDiv = document.getElementById('uploadStatus');
             const uploadButton = document.getElementById('uploadButton');
-
-            if (fileInput.files.length === 0) {
-                statusDiv.textContent = 'Por favor, selecione um arquivo.';
-                statusDiv.className = 'text-red-500';
-                return;
-            }
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            
+            if (!dbCollection) { statusDiv.textContent = 'Aguardando conexão...'; statusDiv.className = 'text-orange-500'; return; }
+            if (fileInput.files.length === 0) { statusDiv.textContent = 'Selecione um arquivo.'; statusDiv.className = 'text-red-500'; return; }
+            const file = fileInput.files[0], reader = new FileReader();
             reader.onload = async (event) => {
                 try {
-                    statusDiv.textContent = 'Processando arquivo...';
-                    uploadButton.disabled = true;
-                    
+                    statusDiv.textContent = 'Processando...'; uploadButton.disabled = true;
                     const records = parseDataFile(event.target.result);
                     if (records.length > 0) {
-                        statusDiv.textContent = `Enviando ${records.length} registros para o banco de dados...`;
+                        statusDiv.textContent = `Enviando ${records.length} registros...`;
                         await uploadData(records);
-                        statusDiv.textContent = `${records.length} registros salvos com sucesso!`;
-                        statusDiv.className = 'text-green-600';
-                        fileInput.value = ''; // Limpa o input
+                        statusDiv.textContent = `${records.length} registros salvos!`; statusDiv.className = 'text-green-600';
+                        fileInput.value = '';
                     } else {
-                         statusDiv.textContent = 'Nenhum registro válido encontrado no arquivo.';
-                         statusDiv.className = 'text-yellow-600';
+                         statusDiv.textContent = 'Nenhum registro válido encontrado.'; statusDiv.className = 'text-yellow-600';
                     }
                 } catch (error) {
-                    console.error("Erro no upload:", error);
-                    statusDiv.textContent = 'Erro ao processar o arquivo.';
-                    statusDiv.className = 'text-red-500';
-                } finally {
-                    uploadButton.disabled = false;
-                }
+                    console.error("Erro no upload:", error); statusDiv.textContent = 'Erro ao processar.'; statusDiv.className = 'text-red-500';
+                } finally { uploadButton.disabled = false; }
             };
-            
-            reader.onerror = () => {
-                statusDiv.textContent = 'Erro ao ler o arquivo.';
-                statusDiv.className = 'text-red-500';
-                uploadButton.disabled = false;
-            };
-            
+            reader.onerror = () => { statusDiv.textContent = 'Erro ao ler o arquivo.'; statusDiv.className = 'text-red-500'; uploadButton.disabled = false; };
             reader.readAsText(file);
         });
-
         document.getElementById('filterButton').addEventListener('click', fetchAndRenderData);
-        
         document.getElementById('clearFilterButton').addEventListener('click', () => {
-            document.getElementById('startDate').value = '';
-            document.getElementById('endDate').value = '';
-            document.getElementById('filterValue').value = '';
+            document.getElementById('startDate').value = ''; document.getElementById('endDate').value = ''; document.getElementById('filterValue').value = '';
             fetchAndRenderData();
         });
-
         document.getElementById('downloadCsvButton').addEventListener('click', exportToCsv);
-
     </script>
 </body>
 </html>
-
 
