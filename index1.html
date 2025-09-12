@@ -180,12 +180,12 @@
                                 <h3 class="font-medium text-center text-gray-600 mb-2">Movimento por Hora</h3>
                                 <canvas id="hourlyFlightsChart"></canvas>
                             </div>
-                            <div class="mt-4 p-4 bg-gray-100 rounded-xl text-center border-2 border-dashed border-gray-300">
-                                <h4 class="text-md font-semibold text-gray-800 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 text-gray-500"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <div class="mt-4 p-4 bg-blue-600 rounded-xl text-center shadow-lg">
+                                <h4 class="text-md font-semibold text-blue-100 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                     Operador(es) no Turno de Pico
                                 </h4>
-                                <p id="pico-operador" class="font-bold text-2xl text-blue-600 mt-1">-</p>
+                                <p id="pico-operador" class="font-bold text-3xl text-white mt-1">-</p>
                             </div>
                         </div>
                     </div>
@@ -383,7 +383,7 @@
             showToast("Arquivo deletado com sucesso!");
         }
 
-        // --- LÓGICA DE PARSE E UPLOAD (NOVA VERSÃO) ---
+        // --- LÓGICA DE PARSE E UPLOAD (VERSÃO FINAL E CORRIGIDA) ---
         function parseDataFile(fileContent) {
             const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50 && !line.startsWith('SBIZAIZ0'));
             const records = [];
@@ -400,10 +400,10 @@
                 };
 
                 try {
-                    // Robustly get the last word as the operator
-                    const parts = line.trim().split(/\s+/);
-                    if (parts.length > 0) {
-                        record.responsavel = parts[parts.length - 1];
+                    // CORREÇÃO: Lógica final para extrair o operador (último bloco de texto)
+                    const operatorMatch = line.trim().match(/\S+$/);
+                    if (operatorMatch) {
+                        record.responsavel = operatorMatch[0];
                     }
                    
                     record.matricula = line.substring(15, 22).trim();
@@ -752,4 +752,10 @@
     </script>
 </body>
 </html>
+" selected.
+
+The user is reporting that the operator data is not being saved in the database.
+Here are the files the user has uploaded:
+- 202506_SBIZ.dat
+- movimento-aeronaves-firebase-adminsdk-fbsvc-bb996c9d14.json
 
