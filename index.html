@@ -166,26 +166,26 @@
                                 <span id="voos-comerciais" class="font-bold text-lg text-blue-600">0</span>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span class="font-medium text-gray-600">Horário de Maior Movimento:</span>
+                                <span class="font-medium text-gray-600">Horário de Maior Movimento (Média Mensal):</span>
                                 <span id="horario-pico" class="font-bold text-lg text-green-600">-</span>
                             </div>
                             <div class="flex justify-between items-center">
-                                <span class="font-medium text-gray-600">Horários Mais Ociosos:</span>
+                                <span class="font-medium text-gray-600">Horários Mais Ociosos (Média Mensal):</span>
                                 <span id="horario-ocioso" class="font-bold text-lg text-red-600">-</span>
                             </div>
                         </div>
                         <!-- Gráfico de Picos por Hora -->
                         <div class="md:col-span-2 mt-6 pt-4 border-t">
                             <div class="relative h-72">
-                                <h3 class="font-medium text-center text-gray-600 mb-2">Movimento por Hora</h3>
+                                <h3 class="font-medium text-center text-gray-600 mb-2">Movimento por Hora (Média Mensal)</h3>
                                 <canvas id="hourlyFlightsChart"></canvas>
                             </div>
-                            <div class="mt-4 p-4 bg-gray-100 rounded-xl text-center border-2 border-dashed border-gray-300">
-                                <h4 class="text-md font-semibold text-gray-800 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 text-gray-500"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    Operador(es) no Turno de Pico
+                             <div class="mt-4 p-4 bg-blue-600 rounded-xl text-center shadow-lg">
+                                <h4 class="text-md font-semibold text-blue-100 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    Operador do Pico Absoluto do Mês
                                 </h4>
-                                <p id="pico-operador" class="font-bold text-2xl text-blue-600 mt-1">-</p>
+                                <p id="pico-operador" class="font-bold text-3xl text-white mt-1">-</p>
                             </div>
                         </div>
                     </div>
@@ -383,7 +383,7 @@
             showToast("Arquivo deletado com sucesso!");
         }
 
-        // --- LÓGICA DE PARSE E UPLOAD (NOVA VERSÃO) ---
+        // --- LÓGICA DE PARSE E UPLOAD (VERSÃO FINAL E CORRIGIDA) ---
         function parseDataFile(fileContent) {
             const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50 && !line.startsWith('SBIZAIZ0'));
             const records = [];
@@ -400,10 +400,10 @@
                 };
 
                 try {
-                    // Robustly get the last word as the operator
-                    const parts = line.trim().split(/\s+/);
-                    if (parts.length > 0) {
-                        record.responsavel = parts[parts.length - 1];
+                    // CORREÇÃO: Lógica final para extrair o operador (último bloco de texto)
+                    const operatorMatch = line.trim().match(/\S+$/);
+                    if (operatorMatch) {
+                        record.responsavel = operatorMatch[0];
                     }
                    
                     record.matricula = line.substring(15, 22).trim();
@@ -586,18 +586,23 @@
                 return;
             }
 
-            // Calcular novas estatísticas
+            // --- ANÁLISE DETALHADA ---
             let voosComerciais = 0;
-            const hourlyCounts = Array(24).fill(0);
-            const hourlyOperators = Array.from({ length: 24 }, () => []);
             const commercialPrefixes = ['AZU', 'GLO', 'TAM'];
+            const flightsByDayHour = {}; // Estrutura para encontrar o pico absoluto
+            const overallHourlyCounts = Array(24).fill(0); // Para o gráfico de média mensal
 
             data.forEach(flight => {
-                if (flight.timestamp) { // Apenas conta para estatísticas se a data for válida
+                if (flight.timestamp) {
                     const date = new Date(flight.timestamp.seconds * 1000);
                     const hour = date.getUTCHours();
-                    hourlyCounts[hour]++;
-                    hourlyOperators[hour].push(flight.responsavel);
+                    overallHourlyCounts[hour]++;
+
+                    const dayHourKey = `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}-${hour}`;
+                    if (!flightsByDayHour[dayHourKey]) {
+                        flightsByDayHour[dayHourKey] = [];
+                    }
+                    flightsByDayHour[dayHourKey].push(flight);
                 }
 
                 if (commercialPrefixes.some(prefix => flight.matricula.startsWith(prefix))) {
@@ -605,28 +610,51 @@
                 }
             });
 
-            const maxVoos = Math.max(...hourlyCounts);
-            const horariosPico = hourlyCounts.map((count, hour) => count === maxVoos ? `${hour}:00h` : null).filter(h => h);
-            
-            let picoOperadores = new Set();
-            hourlyCounts.forEach((count, hour) => {
-                if (count === maxVoos && maxVoos > 0) {
-                    hourlyOperators[hour].forEach(op => picoOperadores.add(op));
+            // Encontrar o pico absoluto do mês
+            let peakInfo = { count: 0, flights: [] };
+            for (const key in flightsByDayHour) {
+                if (flightsByDayHour[key].length > peakInfo.count) {
+                    peakInfo.count = flightsByDayHour[key].length;
+                    peakInfo.flights = flightsByDayHour[key];
                 }
-            });
+            }
 
-            const minVoos = Math.min(...hourlyCounts);
-            const horariosOciosos = hourlyCounts.map((count, hour) => count === minVoos ? `${hour}:00h` : null).filter(h => h);
+            // Encontrar o operador mais frequente DENTRO do pico absoluto
+            let topOperator = '-';
+            if (peakInfo.count > 0) {
+                const operatorCounts = peakInfo.flights.reduce((acc, flight) => {
+                    acc[flight.responsavel] = (acc[flight.responsavel] || 0) + 1;
+                    return acc;
+                }, {});
+
+                let maxCount = 0;
+                let topOperators = [];
+                for (const op in operatorCounts) {
+                    if (operatorCounts[op] > maxCount) {
+                        maxCount = operatorCounts[op];
+                        topOperators = [op];
+                    } else if (operatorCounts[op] === maxCount) {
+                        topOperators.push(op);
+                    }
+                }
+                topOperator = topOperators.join(', ');
+            }
+
+            // Calcular médias mensais para os outros campos
+            const maxVoosOverall = Math.max(...overallHourlyCounts);
+            const horariosPico = overallHourlyCounts.map((count, hour) => count === maxVoosOverall ? `${hour}:00h` : null).filter(h => h);
+            const minVoosOverall = Math.min(...overallHourlyCounts);
+            const horariosOciosos = overallHourlyCounts.map((count, hour) => count === minVoosOverall ? `${hour}:00h` : null).filter(h => h);
 
             // Atualizar DOM
             totalVoosEl.textContent = data.length;
             voosComerciaisEl.textContent = voosComerciais;
             horarioPicoEl.textContent = horariosPico.length > 0 ? horariosPico.join(', ') : '-';
             horarioOciosoEl.textContent = horariosOciosos.length > 0 ? horariosOciosos.join(', ') : '-';
-            picoOperadorEl.textContent = picoOperadores.size > 0 ? [...picoOperadores].join(', ') : '-';
+            picoOperadorEl.textContent = topOperator;
 
 
-            // --- Gráficos existentes ---
+            // --- Gráficos ---
             const ruleCounts = data.reduce((acc, flight) => {
                 const rule = flight.regra_voo.includes('IV') ? 'IFR' : 'VFR';
                 acc[rule] = (acc[rule] || 0) + 1;
@@ -651,7 +679,6 @@
                 options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
             });
 
-            // Gráfico de picos por hora
             const hourlyLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
             if (hourlyFlightsChart) hourlyFlightsChart.destroy();
             hourlyFlightsChart = new Chart(document.getElementById('hourlyFlightsChart'), {
@@ -660,7 +687,7 @@
                     labels: hourlyLabels,
                     datasets: [{
                         label: 'Nº de Voos',
-                        data: hourlyCounts,
+                        data: overallHourlyCounts,
                         backgroundColor: '#10b981'
                     }]
                 },
