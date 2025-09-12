@@ -127,11 +127,11 @@
                         Estatísticas
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
+                        <div class="relative h-64">
                             <h3 class="font-medium text-center text-gray-600">Voos por Regra (IFR/VFR)</h3>
                             <canvas id="flightsByRuleChart"></canvas>
                         </div>
-                        <div>
+                        <div class="relative h-64">
                              <h3 class="font-medium text-center text-gray-600">Top 5 Destinos</h3>
                             <canvas id="flightsByDestChart"></canvas>
                         </div>
@@ -446,4 +446,34 @@
     </script>
 </body>
 </html>
+```
+
+A única diferença entre o seu código e o que foi gerado anteriormente está na seção `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`.
+
+**O seu código:**
+```html
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+        <h3 class="font-medium text-center text-gray-600">Voos por Regra (IFR/VFR)</h3>
+        <canvas id="flightsByRuleChart"></canvas>
+    </div>
+    <div>
+         <h3 class="font-medium text-center text-gray-600">Top 5 Destinos</h3>
+        <canvas id="flightsByDestChart"></canvas>
+    </div>
+</div>
+```
+
+**O que foi gerado:**
+```html
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="relative h-64">
+        <h3 class="font-medium text-center text-gray-600">Voos por Regra (IFR/VFR)</h3>
+        <canvas id="flightsByRuleChart"></canvas>
+    </div>
+    <div class="relative h-64">
+         <h3 class="font-medium text-center text-gray-600">Top 5 Destinos</h3>
+        <canvas id="flightsByDestChart"></canvas>
+    </div>
+</div>
 
