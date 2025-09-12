@@ -32,6 +32,9 @@
         #toast {
             transition: opacity 0.5s, transform 0.5s;
         }
+        .chevron-icon {
+            transition: transform 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -174,18 +177,23 @@
                                 <span id="horario-ocioso" class="font-bold text-lg text-red-600">-</span>
                             </div>
                         </div>
-                        <!-- Gráfico de Picos por Hora -->
-                        <div class="md:col-span-2 mt-6 pt-4 border-t">
-                            <div class="relative h-72">
+                        <!-- Gráfico de Picos por Hora (Expansível) -->
+                        <div id="hourly-chart-section" class="md:col-span-2 mt-6 pt-4 border-t">
+                            <div id="hourly-chart-header" class="cursor-pointer">
+                                <div class="p-4 bg-blue-500 bg-opacity-30 rounded-xl text-center shadow-md flex justify-between items-center">
+                                    <h4 class="text-md font-semibold text-blue-800 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 text-blue-700"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                        Operador do Pico Absoluto do Mês
+                                    </h4>
+                                    <div class="flex items-center">
+                                        <p id="pico-operador" class="font-bold text-3xl text-blue-900 mr-4">-</p>
+                                        <svg id="chevron-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-blue-800 chevron-icon"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="hourly-chart-body" class="relative h-72 mt-4 hidden">
                                 <h3 class="font-medium text-center text-gray-600 mb-2">Movimento por Hora (Média Mensal)</h3>
                                 <canvas id="hourlyFlightsChart"></canvas>
-                            </div>
-                            <div class="mt-8 p-4 bg-blue-500 bg-opacity-30 rounded-xl text-center shadow-md">
-                                <h4 class="text-md font-semibold text-blue-800 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 text-blue-700"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                    Operador do Pico Absoluto do Mês
-                                </h4>
-                                <p id="pico-operador" class="font-bold text-3xl text-blue-900 mt-1">-</p>
                             </div>
                         </div>
                     </div>
@@ -780,4 +788,19 @@
 </body>
 </html>
 " and the user's latest query is "Ajustar o layout da informação de operador de pico para ficar acima do gráfico de barras, mantendo a estrutura original, mas invertendo a posição dos elementos. Quero também que esse card seja expansível, mostrando inicialmente apenas o título e o operador do pico, e ao clicar, ele revele o gráfico de barras.
+
+Parou de carregar os dados. E não notifica mais quando carrega os dados com sucesso." code between  and  in the most up-to-date Canvas "Análise de Movimento Aeronáutico" document above and am asking a query about/based on this code below.
+Instructions to follow:
+  * Don't output/edit the document if the query is Direct/Simple. For example, if the query asks for a simple explanation, output a direct answer.
+  * Make sure to **edit** the document if the query shows the intent of editing the document, in which case output the entire edited document, **not just that section or the edits**.
+    * Don't output the same document/empty document and say that you have edited it.
+    * Don't change unrelated code in the document.
+  * Don't output  and  in your final response.
+  * Any references like "this" or "selected code" refers to the code between  and  tags.
+  * Just acknowledge my request in the introduction.
+  * Make sure to refer to the document as "Canvas" in your response.
+
+Ajustar o layout da informação de operador de pico para ficar acima do gráfico de barras, mantendo a estrutura original, mas invertendo a posição dos elementos. Quero também que esse card seja expansível, mostrando inicialmente apenas o título e o operador do pico, e ao clicar, ele revele o gráfico de barras.
+
+Parou de carregar os dados. E não notifica mais quando carrega os dados com sucesso.
 
