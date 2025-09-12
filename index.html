@@ -397,9 +397,14 @@
                 };
 
                 try {
+                    const trimmedLine = line.trim();
+                    const lastSpaceIndex = trimmedLine.lastIndexOf(' ');
+                    if (lastSpaceIndex !== -1) {
+                         record.responsavel = trimmedLine.substring(lastSpaceIndex + 1);
+                    }
+                   
                     record.matricula = line.substring(15, 22).trim();
                     record.tipo_aeronave = line.substring(22, 27).trim();
-                    record.responsavel = line.substring(line.length - 4).trim();
 
                     const ruleMatch = line.match(/(IV|VV)/);
                     if (ruleMatch) {
