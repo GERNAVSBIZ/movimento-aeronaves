@@ -377,6 +377,7 @@
         async function uploadData(fileName, records) {
             if (!records || records.length === 0) return;
 
+            // Cria o documento principal do arquivo
             const fileDocRef = await addDoc(filesCollection, {
                 fileName: fileName,
                 recordCount: records.length,
@@ -385,13 +386,24 @@
             });
 
             const recordsCollectionRef = collection(db, fileDocRef.path, "records");
-            const batch = writeBatch(db);
-            records.forEach(record => {
-                const docRef = doc(recordsCollectionRef);
-                batch.set(docRef, record);
-            });
-            await batch.commit();
-            showToast(`Arquivo "${fileName}" salvo com sucesso!`);
+            
+            // Divide os registros em lotes de 499 (para ficar abaixo do limite de 500)
+            const chunkSize = 499;
+            for (let i = 0; i < records.length; i += chunkSize) {
+                const chunk = records.slice(i, i + chunkSize);
+                
+                // Cria um novo lote para cada pedaço
+                const batch = writeBatch(db);
+                chunk.forEach(record => {
+                    const docRef = doc(recordsCollectionRef);
+                    batch.set(docRef, record);
+                });
+                
+                // Envia o lote
+                await batch.commit();
+            }
+
+            showToast(`Arquivo "${fileName}" com ${records.length} registros salvo com sucesso!`);
         }
 
         // --- LÓGICA DE BUSCA E RENDERIZAÇÃO ---
@@ -523,12 +535,14 @@
                     if (records.length > 0) {
                         statusDiv.textContent = `Enviando ${records.length} registros...`;
                         await uploadData(file.name, records);
+                        statusDiv.textContent = ''; // Limpa o status após o toast
                         fileInput.value = '';
                     } else {
                          statusDiv.textContent = 'Nenhum registro válido encontrado.'; statusDiv.className = 'mt-2 text-center text-sm text-yellow-600';
                     }
                 } catch (error) {
                     console.error("Erro no upload:", error); statusDiv.textContent = 'Erro ao processar.'; statusDiv.className = 'mt-2 text-center text-sm text-red-500';
+                    showToast("Erro ao salvar o arquivo.", true);
                 } finally { uploadButton.disabled = false; }
             };
             reader.readAsText(file);
