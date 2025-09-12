@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>nálise de Movimento Aeronáutico</title>
+    <title>Análise de Movimento Aeronáutico</title>
     <!-- Tailwind CSS para um design moderno e responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Biblioteca Chart.js para visualização de estatísticas -->
@@ -27,6 +27,10 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f2f5;
+        }
+        /* Estilos para a notificação Toast */
+        #toast {
+            transition: opacity 0.5s, transform 0.5s;
         }
     </style>
 </head>
@@ -188,6 +192,12 @@
         </main>
     </div>
 
+     <!-- Notificação Toast -->
+    <div id="toast" class="fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-md opacity-0 transform translate-y-[-20px]">
+        <p id="toast-message"></p>
+    </div>
+
+
     <!-- Módulo JavaScript com a lógica da aplicação -->
     <script type="module">
         // Importações do SDK do Firebase
@@ -282,6 +292,25 @@
 
         document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
 
+        // --- NOTIFICAÇÕES (TOAST) ---
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.textContent = message;
+            toast.className = `fixed top-5 right-5 text-white py-2 px-4 rounded-lg shadow-md transition-all duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            
+            // Animação de entrada
+            toast.classList.remove('opacity-0', 'translate-y-[-20px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            // Esconde após 3 segundos
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-[-20px]');
+            }, 3000);
+        }
+
         // --- GERENCIAMENTO DE ARQUIVOS ---
         
         function fetchFilesList() {
@@ -295,6 +324,9 @@
                     const option = new Option(`${file.fileName} (${new Date(file.uploadTimestamp.seconds * 1000).toLocaleDateString()})`, doc.id);
                     fileListSelect.add(option);
                 });
+            }, error => {
+                 console.error("Erro ao buscar lista de arquivos: ", error);
+                 showToast("Erro ao carregar lista de arquivos.", true);
             });
         }
 
@@ -314,11 +346,11 @@
 
             renderTable([]);
             renderStats([]);
+            showToast("Arquivo deletado com sucesso!");
         }
 
         // --- LÓGICA DE PARSE E UPLOAD ---
         function parseDataFile(fileContent) {
-            //... (função inalterada)
             const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50);
             const records = [];
             for (const line of lines) {
@@ -359,6 +391,7 @@
                 batch.set(docRef, record);
             });
             await batch.commit();
+            showToast(`Arquivo "${fileName}" salvo com sucesso!`);
         }
 
         // --- LÓGICA DE BUSCA E RENDERIZAÇÃO ---
@@ -400,12 +433,12 @@
                 renderStats(flights);
             }, (error) => {
                 console.error("Erro ao buscar voos: ", error);
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8 text-red-500">Erro ao carregar dados.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8 text-red-500">Erro ao carregar dados. Verifique as permissões no Firebase.</td></tr>';
+                showToast("Erro ao carregar dados do arquivo.", true);
             });
         }
         
         function renderTable(data) {
-            //... (função inalterada)
             const tableBody = document.getElementById('dataTableBody');
             tableBody.innerHTML = '';
             currentFlightData = data;
@@ -458,7 +491,6 @@
         
         // --- LÓGICA DE EXPORTAÇÃO CSV ---
         function exportToCsv() {
-             //... (função inalterada)
             if (currentFlightData.length === 0) return alert("Não há dados para exportar.");
             const headers = ["timestamp_utc", "matricula", "tipo_aeronave", "destino", "regra_voo", "pista"];
             let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
@@ -491,7 +523,6 @@
                     if (records.length > 0) {
                         statusDiv.textContent = `Enviando ${records.length} registros...`;
                         await uploadData(file.name, records);
-                        statusDiv.textContent = `Arquivo "${file.name}" salvo!`; statusDiv.className = 'mt-2 text-center text-sm text-green-600';
                         fileInput.value = '';
                     } else {
                          statusDiv.textContent = 'Nenhum registro válido encontrado.'; statusDiv.className = 'mt-2 text-center text-sm text-yellow-600';
@@ -516,7 +547,7 @@
             if (confirm(`Tem certeza que deseja deletar o arquivo "${selectedFileText}" e todos os seus registros? Esta ação não pode ser desfeita.`)) {
                 deleteFileAndRecords(selectedFileId).catch(err => {
                     console.error("Erro ao deletar:", err);
-                    alert("Ocorreu um erro ao deletar o arquivo.");
+                    showToast("Erro ao deletar o arquivo.", true);
                 });
             }
         });
