@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de Movimento Aeronáutico</title>
+    <!-- Tailwind CSS para um design moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Biblioteca Chart.js para visualização de estatísticas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Estilo para um scrollbar mais sutil */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        /* Estilos para a notificação Toast */
+        #toast {
+            transition: opacity 0.5s, transform 0.5s;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Container da Tela de Login -->
+    <div id="login-container" class="flex items-center justify-center min-h-screen">
+        <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-3xl font-bold text-center text-gray-700 mb-2">Bem-vindo</h2>
+            <p class="text-center text-gray-500 mb-6">Acesse para continuar</p>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+                    <input type="password" id="password" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div id="login-error" class="text-red-500 text-sm text-center"></div>
+                <div class="flex items-center justify-between space-x-4 pt-2">
+                    <button type="button" id="register-button" class="w-full justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-500 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Registrar
+                    </button>
+                    <button type="submit" id="login-button" class="w-full justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Entrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Container Principal da Aplicação (inicialmente oculto) -->
+    <div id="app" class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl hidden">
+        <header class="flex flex-wrap items-center justify-between mb-6 gap-4">
+            <h1 class="text-3xl font-bold text-gray-700 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mr-3 text-blue-600"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 1 4 2 2h3l1-1-2-3 2-2 7 7-1.5 1.5.5 3c.1.5.6.9 1.1.8l.5-.2c.4-.3.6-.7.5-1.2Z"/></svg>
+                Análise de Tráfego Aéreo
+            </h1>
+            <div id="auth-status" class="flex items-center gap-4 text-sm">
+                <span id="user-email" class="text-gray-600"></span>
+                <button id="logout-button" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition duration-300 text-sm">
+                    Sair
+                </button>
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Coluna da Esquerda: Upload e Filtros -->
+            <div class="lg:col-span-1 flex flex-col gap-6">
+                <!-- Card de Gerenciamento de Arquivos -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-blue-500"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                        Gerenciador de Arquivos
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Enviar novo arquivo</label>
+                            <input class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" type="file" id="dataFile" accept=".dat,.dta">
+                            <button id="uploadButton" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg mt-2 hover:bg-blue-700 transition duration-300 disabled:bg-gray-400">
+                                Enviar e Salvar
+                            </button>
+                             <div id="uploadStatus" class="mt-2 text-center text-sm"></div>
+                        </div>
+
+                        <hr/>
+
+                        <div>
+                             <label for="fileList" class="block text-sm font-medium text-gray-700 mb-1">Selecionar arquivo existente</label>
+                            <select id="fileList" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"></select>
+                            <div class="flex space-x-2 mt-2">
+                                <button id="loadButton" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition">Carregar Dados</button>
+                                <button id="deleteButton" class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition">Deletar Arquivo</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card de Filtros -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2 flex items-center">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-green-500"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        Filtros de Pesquisa
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="startDate" class="block text-sm font-medium text-gray-700">Data Inicial</label>
+                            <input type="date" id="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label for="endDate" class="block text-sm font-medium text-gray-700">Data Final</label>
+                            <input type="date" id="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label for="filterValue" class="block text-sm font-medium text-gray-700">Matrícula, Destino ou Aeronave</label>
+                            <input type="text" id="filterValue" placeholder="Ex: AZU2878, SBCF, E295S" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        </div>
+                         <div class="flex space-x-2">
+                             <button id="filterButton" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300">Aplicar Filtro</button>
+                             <button id="clearFilterButton" class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300">Limpar</button>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna da Direita: Dados e Estatísticas -->
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                 <!-- Card de Estatísticas -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-purple-500"><path d="M3 3v18h18"/><path d="M18.7 8a6 6 0 0 0-6 0"/><path d="M12.7 14a6 6 0 0 0-6 0"/><path d="M9 12a3 3 0 0 0-3-3"/><path d="M9 12a3 3 0 0 0 3 3"/><path d="M15 12a3 3 0 0 0 3-3"/><path d="M15 12a3 3 0 0 0-3 3"/></svg>
+                        Estatísticas
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="relative h-64">
+                            <h3 class="font-medium text-center text-gray-600">Voos por Regra (IFR/VFR)</h3>
+                            <canvas id="flightsByRuleChart"></canvas>
+                        </div>
+                        <div class="relative h-64">
+                             <h3 class="font-medium text-center text-gray-600">Top 5 Destinos</h3>
+                            <canvas id="flightsByDestChart"></canvas>
+                        </div>
+                        <!-- Novas Estatísticas -->
+                        <div class="md:col-span-2 mt-4 pt-4 border-t space-y-2 text-sm">
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium text-gray-600">Total de Voos no Período:</span>
+                                <span id="total-voos" class="font-bold text-lg text-blue-600">0</span>
+                            </div>
+                             <div class="flex justify-between items-center">
+                                <span class="font-medium text-gray-600">Voos Comerciais (AZU, GLO, TAM):</span>
+                                <span id="voos-comerciais" class="font-bold text-lg text-blue-600">0</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium text-gray-600">Horário de Maior Movimento:</span>
+                                <span id="horario-pico" class="font-bold text-lg text-green-600">-</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="font-medium text-gray-600">Horários Mais Ociosos:</span>
+                                <span id="horario-ocioso" class="font-bold text-lg text-red-600">-</span>
+                            </div>
+                        </div>
+                        <!-- Gráfico de Picos por Hora -->
+                        <div class="md:col-span-2 mt-6 pt-4 border-t">
+                            <div class="relative h-72">
+                                <h3 class="font-medium text-center text-gray-600 mb-2">Movimento por Hora</h3>
+                                <canvas id="hourlyFlightsChart"></canvas>
+                            </div>
+                            <div class="mt-4 p-4 bg-gray-100 rounded-xl text-center border-2 border-dashed border-gray-300">
+                                <h4 class="text-md font-semibold text-gray-800 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 text-gray-500"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    Operador(es) no Turno de Pico
+                                </h4>
+                                <p id="pico-operador" class="font-bold text-2xl text-blue-600 mt-1">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabela de Dados -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h2 class="text-xl font-semibold flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-yellow-500"><path d="M12 22V8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/><path d="M5 12a7 7 0 0 1 14 0"/><path d="M12 8a3 3 0 0 0-3-3"/></svg>
+                            Registros de Voo
+                        </h2>
+                        <button id="downloadCsvButton" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-300 text-sm flex items-center">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            Download CSV
+                        </button>
+                    </div>
+                    <div class="overflow-auto" style="max-height: 500px;">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">Data/Hora (UTC)</th>
+                                    <th scope="col" class="px-4 py-3">Matrícula</th>
+                                    <th scope="col" class="px-4 py-3">Aeronave</th>
+                                    <th scope="col" class="px-4 py-3">Destino</th>
+                                    <th scope="col" class="px-4 py-3">Regra</th>
+                                    <th scope="col" class="px-4 py-3">Pista</th>
+                                    <th scope="col" class="px-4 py-3">Operador</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody">
+                                <tr><td colspan="7" class="text-center p-8">Selecione um arquivo para visualizar os dados.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+     <!-- Notificação Toast -->
+    <div id="toast" class="fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-md opacity-0 transform translate-y-[-20px]">
+        <p id="toast-message"></p>
+    </div>
+
+
+    <!-- Módulo JavaScript com a lógica da aplicação -->
+    <script type="module">
+        // Importações do SDK do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, doc, writeBatch, query, where, orderBy, onSnapshot, addDoc, getDocs, deleteDoc
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURAÇÃO E INICIALIZAÇÃO ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBO0qk_81i9wrZPi3o_2SnPxOItB65cQeA",
+            authDomain: "movimento-aeronaves.firebaseapp.com",
+            projectId: "movimento-aeronaves",
+            storageBucket: "movimento-aeronaves.firebasestorage.app",
+            messagingSenderId: "217548855288",
+            appId: "1:217548855288:web:14ac15a979225bfacca80d",
+            measurementId: "G-XG0F0WK0K1"
+        };
+        const appId = firebaseConfig.projectId;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // --- VARIÁVEIS DE ESTADO ---
+        let filesCollection;
+        let currentFlightData = [];
+        let unsubscribeFromFlights;
+        let unsubscribeFromFiles;
+        let flightsByRuleChart, flightsByDestChart, hourlyFlightsChart;
+        
+        // Elementos da UI
+        const loginContainer = document.getElementById('login-container');
+        const appContainer = document.getElementById('app');
+        const userEmailSpan = document.getElementById('user-email');
+        const loginErrorDiv = document.getElementById('login-error');
+        const fileListSelect = document.getElementById('fileList');
+
+        // --- LÓGICA DE AUTENTICAÇÃO E CONTROLE DE UI ---
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                loginContainer.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                userEmailSpan.textContent = user.email;
+                filesCollection = collection(db, `/artifacts/${appId}/public/data/files`);
+                fetchFilesList();
+            } else {
+                appContainer.classList.add('hidden');
+                loginContainer.classList.remove('hidden');
+                if (unsubscribeFromFlights) unsubscribeFromFlights();
+                if (unsubscribeFromFiles) unsubscribeFromFiles();
+                renderTable([]);
+                renderStats([]);
+            }
+        });
+
+        const handleAuth = async (authFunction, email, password) => {
+            loginErrorDiv.textContent = '';
+            try {
+                await authFunction(auth, email, password);
+            } catch (error) {
+                const errorMessages = {
+                    'auth/invalid-credential': 'Email ou senha inválidos.',
+                    'auth/wrong-password': 'Email ou senha inválidos.',
+                    'auth/email-already-in-use': 'Este email já está em uso.',
+                    'auth/weak-password': 'A senha deve ter pelo menos 6 caracteres.'
+                };
+                loginErrorDiv.textContent = errorMessages[error.code] || 'Ocorreu um erro. Tente novamente.';
+            }
+        };
+
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleAuth(signInWithEmailAndPassword, document.getElementById('email').value, document.getElementById('password').value);
+        });
+
+        document.getElementById('register-button').addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if (email && password) {
+                 handleAuth(createUserWithEmailAndPassword, email, password);
+            } else {
+                loginErrorDiv.textContent = 'Preencha email e senha para se registrar.';
+            }
+        });
+
+        document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
+
+        // --- NOTIFICAÇÕES (TOAST) ---
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.textContent = message;
+            toast.className = `fixed top-5 right-5 text-white py-2 px-4 rounded-lg shadow-md transition-all duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'}`;
+            
+            // Animação de entrada
+            toast.classList.remove('opacity-0', 'translate-y-[-20px]');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            // Esconde após 3 segundos
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-[-20px]');
+            }, 3000);
+        }
+
+        // --- GERENCIAMENTO DE ARQUIVOS ---
+        
+        function fetchFilesList() {
+            if (unsubscribeFromFiles) unsubscribeFromFiles();
+            
+            const q = query(filesCollection, orderBy("uploadTimestamp", "desc"));
+            unsubscribeFromFiles = onSnapshot(q, (querySnapshot) => {
+                fileListSelect.innerHTML = '<option value="">Selecione um arquivo</option>';
+                querySnapshot.forEach((doc) => {
+                    const file = doc.data();
+                    const option = new Option(`${file.fileName} (${new Date(file.uploadTimestamp.seconds * 1000).toLocaleDateString()})`, doc.id);
+                    fileListSelect.add(option);
+                });
+            }, error => {
+                 console.error("Erro ao buscar lista de arquivos: ", error);
+                 showToast("Erro ao carregar lista de arquivos.", true);
+            });
+        }
+
+        async function deleteFileAndRecords(fileId) {
+            if (!fileId) return;
+
+            const recordsCollectionRef = collection(db, `/artifacts/${appId}/public/data/files/${fileId}/records`);
+            const recordsSnapshot = await getDocs(recordsCollectionRef);
+            
+            const batch = writeBatch(db);
+            recordsSnapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+
+            await deleteDoc(doc(filesCollection, fileId));
+
+            renderTable([]);
+            renderStats([]);
+            showToast("Arquivo deletado com sucesso!");
+        }
+
+        // --- LÓGICA DE PARSE E UPLOAD (NOVA VERSÃO) ---
+        function parseDataFile(fileContent) {
+            const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50 && !line.startsWith('SBIZAIZ0'));
+            const records = [];
+
+            for (const line of lines) {
+                let record = {
+                    timestamp: null,
+                    matricula: 'N/A',
+                    tipo_aeronave: 'N/A',
+                    destino: 'N/A',
+                    regra_voo: 'N/A',
+                    pista: '',
+                    responsavel: 'N/A'
+                };
+
+                try {
+                    // Robustly get the last word as the operator
+                    const parts = line.trim().split(/\s+/);
+                    if (parts.length > 0) {
+                        record.responsavel = parts[parts.length - 1];
+                    }
+                   
+                    record.matricula = line.substring(15, 22).trim();
+                    record.tipo_aeronave = line.substring(22, 27).trim();
+
+                    const ruleMatch = line.match(/(IV|VV)/);
+                    if (ruleMatch) {
+                        record.regra_voo = ruleMatch[0];
+                        const ruleIndex = ruleMatch.index;
+                        
+                        const stringAfterRule = line.substring(ruleIndex + 2);
+                        const pistaMatch = stringAfterRule.match(/(\d{2})/);
+                        record.pista = pistaMatch ? pistaMatch[1] : '';
+
+                        const stringBeforeRule = line.substring(0, ruleIndex);
+                        const timeMatches = stringBeforeRule.match(/\d{4}/g);
+                        if (timeMatches) {
+                            const horarioStr = timeMatches[timeMatches.length - 1];
+                            const timeIndex = stringBeforeRule.lastIndexOf(horarioStr);
+                            record.destino = line.substring(27, timeIndex).trim() || 'N/A';
+
+                            const dataStr = line.substring(9, 15);
+                            const day = parseInt(dataStr.substring(0, 2), 10);
+                            const month = parseInt(dataStr.substring(2, 4), 10);
+                            const year = parseInt(`20${dataStr.substring(4, 6)}`, 10);
+                            const hour = parseInt(horarioStr.substring(0, 2), 10);
+                            const minute = parseInt(horarioStr.substring(2, 4), 10);
+
+                            if (!isNaN(day) && !isNaN(month) && !isNaN(year) && !isNaN(hour) && !isNaN(minute) &&
+                                month >= 1 && month <= 12 && day >= 1 && day <= 31 && hour <= 23 && minute <= 59) {
+                                
+                                const utcTimestamp = Date.UTC(year, month - 1, day, hour, minute);
+                                if (!isNaN(utcTimestamp)) {
+                                    record.timestamp = new Date(utcTimestamp);
+                                }
+                            }
+                        }
+                    }
+                    records.push(record);
+                } catch (e) {
+                    console.warn("Erro fatal ao processar linha, registrando com dados parciais:", line, e);
+                    records.push(record); // Adiciona o registro mesmo que com dados incompletos
+                }
+            }
+            return records;
+        }
+
+
+        async function uploadData(fileName, records) {
+            if (!records || records.length === 0) return;
+
+            // Cria o documento principal do arquivo
+            const fileDocRef = await addDoc(filesCollection, {
+                fileName: fileName,
+                recordCount: records.length,
+                uploadTimestamp: new Date(),
+                uploadedBy: auth.currentUser.email
+            });
+
+            const recordsCollectionRef = collection(db, fileDocRef.path, "records");
+            
+            // Divide os registros em lotes de 499 (para ficar abaixo do limite de 500)
+            const chunkSize = 499;
+            for (let i = 0; i < records.length; i += chunkSize) {
+                const chunk = records.slice(i, i + chunkSize);
+                
+                // Cria um novo lote para cada pedaço
+                const batch = writeBatch(db);
+                chunk.forEach(record => {
+                    const docRef = doc(recordsCollectionRef);
+                    batch.set(docRef, record);
+                });
+                
+                // Envia o lote
+                await batch.commit();
+            }
+
+            showToast(`Arquivo "${fileName}" com ${records.length} registros salvo com sucesso!`);
+        }
+
+        // --- LÓGICA DE BUSCA E RENDERIZAÇÃO ---
+        function fetchAndRenderData() {
+            const selectedFileId = fileListSelect.value;
+            if (unsubscribeFromFlights) unsubscribeFromFlights();
+            if (!selectedFileId) {
+                renderTable([]);
+                renderStats([]);
+                return;
+            }
+
+            const recordsCollectionRef = collection(db, `/artifacts/${appId}/public/data/files/${selectedFileId}/records`);
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const filterValue = document.getElementById('filterValue').value.trim().toUpperCase();
+            
+            let q = query(recordsCollectionRef); 
+            if (startDate) q = query(q, where("timestamp", ">=", new Date(startDate)));
+            if (endDate) {
+                 const endOfDay = new Date(endDate);
+                 endOfDay.setUTCHours(23, 59, 59, 999);
+                 q = query(q, where("timestamp", "<=", endOfDay));
+            }
+            
+            const tableBody = document.getElementById('dataTableBody');
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8">Buscando dados...</td></tr>';
+            
+            unsubscribeFromFlights = onSnapshot(q, (snapshot) => {
+                let flights = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Ordenação no lado do cliente para lidar com timestamps nulos
+                flights.sort((a, b) => {
+                    const timeA = a.timestamp ? a.timestamp.seconds : -1;
+                    const timeB = b.timestamp ? b.timestamp.seconds : -1;
+                    return timeB - timeA;
+                });
+
+                if (filterValue) {
+                    flights = flights.filter(f => 
+                        f.matricula.includes(filterValue) || 
+                        (f.destino && f.destino.includes(filterValue)) || 
+                        f.tipo_aeronave.includes(filterValue)
+                    );
+                }
+                renderTable(flights);
+                renderStats(flights);
+            }, (error) => {
+                console.error("Erro ao buscar voos: ", error);
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8 text-red-500">Erro ao carregar dados. Verifique as permissões no Firebase.</td></tr>';
+                showToast("Erro ao carregar dados do arquivo.", true);
+            });
+        }
+        
+        function renderTable(data) {
+            const tableBody = document.getElementById('dataTableBody');
+            tableBody.innerHTML = '';
+            currentFlightData = data;
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8">Nenhum registro encontrado.</td></tr>';
+                return;
+            }
+            data.forEach(flight => {
+                const date = flight.timestamp ? new Date(flight.timestamp.seconds * 1000) : null;
+                const formattedDateTime = date 
+                    ? date.toLocaleString('pt-BR', { timeZone: 'UTC', dateStyle: 'short', timeStyle: 'short' })
+                    : '<span class="text-red-500">Data Inválida</span>';
+
+                const row = `
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${formattedDateTime}</td>
+                        <td class="px-4 py-3">${flight.matricula}</td>
+                        <td class="px-4 py-3">${flight.tipo_aeronave}</td>
+                        <td class="px-4 py-3">${flight.destino}</td>
+                        <td class="px-4 py-3">${flight.regra_voo}</td>
+                        <td class="px-4 py-3">${flight.pista}</td>
+                        <td class="px-4 py-3">${flight.responsavel}</td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        // --- LÓGICA DE ESTATÍSTICAS E GRÁFICOS ---
+        function renderStats(data) {
+            // Elementos para novas estatísticas
+            const totalVoosEl = document.getElementById('total-voos');
+            const voosComerciaisEl = document.getElementById('voos-comerciais');
+            const horarioPicoEl = document.getElementById('horario-pico');
+            const horarioOciosoEl = document.getElementById('horario-ocioso');
+            const picoOperadorEl = document.getElementById('pico-operador');
+
+            // Resetar valores se não houver dados
+            if (data.length === 0) {
+                totalVoosEl.textContent = '0';
+                voosComerciaisEl.textContent = '0';
+                horarioPicoEl.textContent = '-';
+                horarioOciosoEl.textContent = '-';
+                picoOperadorEl.textContent = '-';
+                if (flightsByRuleChart) flightsByRuleChart.destroy();
+                if (flightsByDestChart) flightsByDestChart.destroy();
+                if (hourlyFlightsChart) hourlyFlightsChart.destroy();
+                return;
+            }
+
+            // Calcular novas estatísticas
+            let voosComerciais = 0;
+            const hourlyCounts = Array(24).fill(0);
+            const hourlyOperators = Array.from({ length: 24 }, () => []);
+            const commercialPrefixes = ['AZU', 'GLO', 'TAM'];
+
+            data.forEach(flight => {
+                if (flight.timestamp) { // Apenas conta para estatísticas se a data for válida
+                    const date = new Date(flight.timestamp.seconds * 1000);
+                    const hour = date.getUTCHours();
+                    hourlyCounts[hour]++;
+                    hourlyOperators[hour].push(flight.responsavel);
+                }
+
+                if (commercialPrefixes.some(prefix => flight.matricula.startsWith(prefix))) {
+                    voosComerciais++;
+                }
+            });
+
+            const maxVoos = Math.max(...hourlyCounts);
+            const horariosPico = hourlyCounts.map((count, hour) => count === maxVoos ? `${hour}:00h` : null).filter(h => h);
+            
+            let picoOperadores = new Set();
+            hourlyCounts.forEach((count, hour) => {
+                if (count === maxVoos && maxVoos > 0) {
+                    hourlyOperators[hour].forEach(op => picoOperadores.add(op));
+                }
+            });
+
+            const minVoos = Math.min(...hourlyCounts);
+            const horariosOciosos = hourlyCounts.map((count, hour) => count === minVoos ? `${hour}:00h` : null).filter(h => h);
+
+            // Atualizar DOM
+            totalVoosEl.textContent = data.length;
+            voosComerciaisEl.textContent = voosComerciais;
+            horarioPicoEl.textContent = horariosPico.length > 0 ? horariosPico.join(', ') : '-';
+            horarioOciosoEl.textContent = horariosOciosos.length > 0 ? horariosOciosos.join(', ') : '-';
+            picoOperadorEl.textContent = picoOperadores.size > 0 ? [...picoOperadores].join(', ') : '-';
+
+
+            // --- Gráficos existentes ---
+            const ruleCounts = data.reduce((acc, flight) => {
+                const rule = flight.regra_voo.includes('IV') ? 'IFR' : 'VFR';
+                acc[rule] = (acc[rule] || 0) + 1;
+                return acc;
+            }, { IFR: 0, VFR: 0 });
+
+            if (flightsByRuleChart) flightsByRuleChart.destroy();
+            flightsByRuleChart = new Chart(document.getElementById('flightsByRuleChart'), {
+                type: 'doughnut', data: { labels: ['IFR', 'VFR'], datasets: [{ data: [ruleCounts.IFR, ruleCounts.VFR], backgroundColor: ['#3b82f6', '#16a34a'] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const destCounts = data.reduce((acc, flight) => {
+                if(flight.destino && flight.destino !== 'N/A') acc[flight.destino] = (acc[flight.destino] || 0) + 1;
+                return acc;
+            }, {});
+            const sortedDests = Object.entries(destCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            
+            if (flightsByDestChart) flightsByDestChart.destroy();
+            flightsByDestChart = new Chart(document.getElementById('flightsByDestChart'), {
+                type: 'bar', data: { labels: sortedDests.map(d => d[0]), datasets: [{ label: 'Nº de Voos', data: sortedDests.map(d => d[1]), backgroundColor: '#8b5cf6' }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
+            });
+
+            // Gráfico de picos por hora
+            const hourlyLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+            if (hourlyFlightsChart) hourlyFlightsChart.destroy();
+            hourlyFlightsChart = new Chart(document.getElementById('hourlyFlightsChart'), {
+                type: 'bar',
+                data: {
+                    labels: hourlyLabels,
+                    datasets: [{
+                        label: 'Nº de Voos',
+                        data: hourlyCounts,
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        // --- LÓGICA DE EXPORTAÇÃO CSV ---
+        function exportToCsv() {
+            if (currentFlightData.length === 0) return alert("Não há dados para exportar.");
+            const headers = ["timestamp_utc", "matricula", "tipo_aeronave", "destino", "regra_voo", "pista", "responsavel"];
+            let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+            currentFlightData.forEach(flight => {
+                const date = flight.timestamp ? new Date(flight.timestamp.seconds * 1000).toISOString() : "INVALID_TIMESTAMP";
+                csvContent += [date, flight.matricula, flight.tipo_aeronave, flight.destino, flight.regra_voo, flight.pista, flight.responsavel].join(",") + "\n";
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `export_voos_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('uploadButton').addEventListener('click', () => {
+            const fileInput = document.getElementById('dataFile');
+            const statusDiv = document.getElementById('uploadStatus');
+            const uploadButton = document.getElementById('uploadButton');
+            if (fileInput.files.length === 0) { statusDiv.textContent = 'Selecione um arquivo.'; statusDiv.className = 'mt-2 text-center text-sm text-red-500'; return; }
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    statusDiv.textContent = 'Processando...'; uploadButton.disabled = true;
+                    const records = parseDataFile(event.target.result);
+                    if (records.length > 0) {
+                        statusDiv.textContent = `Enviando ${records.length} registros...`;
+                        await uploadData(file.name, records);
+                        statusDiv.textContent = ''; // Limpa o status após o toast
+                        fileInput.value = '';
+                    } else {
+                         statusDiv.textContent = 'Nenhum registro válido encontrado.'; statusDiv.className = 'mt-2 text-center text-sm text-yellow-600';
+                    }
+                } catch (error) {
+                    console.error("Erro no upload:", error); statusDiv.textContent = 'Erro ao processar.'; statusDiv.className = 'mt-2 text-center text-sm text-red-500';
+                    showToast("Erro ao salvar o arquivo.", true);
+                } finally { uploadButton.disabled = false; }
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('loadButton').addEventListener('click', fetchAndRenderData);
+        document.getElementById('filterButton').addEventListener('click', fetchAndRenderData);
+
+        document.getElementById('deleteButton').addEventListener('click', () => {
+            const selectedFileId = fileListSelect.value;
+            const selectedFileText = fileListSelect.options[fileListSelect.selectedIndex]?.text;
+            if (!selectedFileId) {
+                alert("Por favor, selecione um arquivo da lista para deletar.");
+                return;
+            }
+            if (confirm(`Tem certeza que deseja deletar o arquivo "${selectedFileText}" e todos os seus registros? Esta ação não pode ser desfeita.`)) {
+                deleteFileAndRecords(selectedFileId).catch(err => {
+                    console.error("Erro ao deletar:", err);
+                    showToast("Erro ao deletar o arquivo.", true);
+                });
+            }
+        });
+
+        document.getElementById('clearFilterButton').addEventListener('click', () => {
+            document.getElementById('startDate').value = ''; 
+            document.getElementById('endDate').value = ''; 
+            document.getElementById('filterValue').value = '';
+            if (fileListSelect.value) {
+                fetchAndRenderData();
+            }
+        });
+        
+        document.getElementById('downloadCsvButton').addEventListener('click', exportToCsv);
+    </script>
+</body>
+</html>
+
