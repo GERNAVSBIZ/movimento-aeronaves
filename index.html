@@ -162,7 +162,7 @@
                                 <span id="total-voos" class="font-bold text-lg text-blue-600">0</span>
                             </div>
                              <div class="flex justify-between items-center">
-                                <span class="font-medium text-gray-600">Voos Comerciais:</span>
+                                <span class="font-medium text-gray-600">Voos Comerciais (AZU, GLO, TAM):</span>
                                 <span id="voos-comerciais" class="font-bold text-lg text-blue-600">0</span>
                             </div>
                             <div class="flex justify-between items-center">
@@ -172,6 +172,17 @@
                             <div class="flex justify-between items-center">
                                 <span class="font-medium text-gray-600">Horários Mais Ociosos:</span>
                                 <span id="horario-ocioso" class="font-bold text-lg text-red-600">-</span>
+                            </div>
+                        </div>
+                        <!-- Gráfico de Picos por Hora -->
+                        <div class="md:col-span-2 mt-6 pt-4 border-t">
+                            <div class="relative h-72">
+                                <h3 class="font-medium text-center text-gray-600 mb-2">Movimento por Hora</h3>
+                                <canvas id="hourlyFlightsChart"></canvas>
+                            </div>
+                            <div class="text-center mt-2 text-sm">
+                                <span class="font-medium text-gray-600">Operador(es) no Pico:</span>
+                                <span id="pico-operador" class="font-bold text-blue-600">-</span>
                             </div>
                         </div>
                     </div>
@@ -199,10 +210,11 @@
                                     <th scope="col" class="px-4 py-3">Destino</th>
                                     <th scope="col" class="px-4 py-3">Regra</th>
                                     <th scope="col" class="px-4 py-3">Pista</th>
+                                    <th scope="col" class="px-4 py-3">Operador</th>
                                 </tr>
                             </thead>
                             <tbody id="dataTableBody">
-                                <tr><td colspan="6" class="text-center p-8">Selecione um arquivo para visualizar os dados.</td></tr>
+                                <tr><td colspan="7" class="text-center p-8">Selecione um arquivo para visualizar os dados.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -252,7 +264,7 @@
         let currentFlightData = [];
         let unsubscribeFromFlights;
         let unsubscribeFromFiles;
-        let flightsByRuleChart, flightsByDestChart;
+        let flightsByRuleChart, flightsByDestChart, hourlyFlightsChart;
         
         // Elementos da UI
         const loginContainer = document.getElementById('login-container');
@@ -380,12 +392,14 @@
                     tipo_aeronave: 'N/A',
                     destino: 'N/A',
                     regra_voo: 'N/A',
-                    pista: ''
+                    pista: '',
+                    responsavel: 'N/A'
                 };
 
                 try {
                     record.matricula = line.substring(15, 22).trim();
                     record.tipo_aeronave = line.substring(22, 27).trim();
+                    record.responsavel = line.substring(line.length - 4).trim();
 
                     const ruleMatch = line.match(/(IV|VV)/);
                     if (ruleMatch) {
@@ -477,7 +491,7 @@
             const endDate = document.getElementById('endDate').value;
             const filterValue = document.getElementById('filterValue').value.trim().toUpperCase();
             
-            let q = query(recordsCollectionRef); // Removido o orderBy para incluir docs com timestamp nulo
+            let q = query(recordsCollectionRef); 
             if (startDate) q = query(q, where("timestamp", ">=", new Date(startDate)));
             if (endDate) {
                  const endOfDay = new Date(endDate);
@@ -486,15 +500,15 @@
             }
             
             const tableBody = document.getElementById('dataTableBody');
-            tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8">Buscando dados...</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8">Buscando dados...</td></tr>';
             
             unsubscribeFromFlights = onSnapshot(q, (snapshot) => {
                 let flights = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
                 // Ordenação no lado do cliente para lidar com timestamps nulos
                 flights.sort((a, b) => {
-                    const timeA = a.timestamp ? a.timestamp.seconds : 0;
-                    const timeB = b.timestamp ? b.timestamp.seconds : 0;
+                    const timeA = a.timestamp ? a.timestamp.seconds : -1;
+                    const timeB = b.timestamp ? b.timestamp.seconds : -1;
                     return timeB - timeA;
                 });
 
@@ -509,7 +523,7 @@
                 renderStats(flights);
             }, (error) => {
                 console.error("Erro ao buscar voos: ", error);
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8 text-red-500">Erro ao carregar dados. Verifique as permissões no Firebase.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8 text-red-500">Erro ao carregar dados. Verifique as permissões no Firebase.</td></tr>';
                 showToast("Erro ao carregar dados do arquivo.", true);
             });
         }
@@ -519,7 +533,7 @@
             tableBody.innerHTML = '';
             currentFlightData = data;
             if (data.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8">Nenhum registro encontrado.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8">Nenhum registro encontrado.</td></tr>';
                 return;
             }
             data.forEach(flight => {
@@ -536,6 +550,7 @@
                         <td class="px-4 py-3">${flight.destino}</td>
                         <td class="px-4 py-3">${flight.regra_voo}</td>
                         <td class="px-4 py-3">${flight.pista}</td>
+                        <td class="px-4 py-3">${flight.responsavel}</td>
                     </tr>`;
                 tableBody.innerHTML += row;
             });
@@ -548,6 +563,7 @@
             const voosComerciaisEl = document.getElementById('voos-comerciais');
             const horarioPicoEl = document.getElementById('horario-pico');
             const horarioOciosoEl = document.getElementById('horario-ocioso');
+            const picoOperadorEl = document.getElementById('pico-operador');
 
             // Resetar valores se não houver dados
             if (data.length === 0) {
@@ -555,14 +571,17 @@
                 voosComerciaisEl.textContent = '0';
                 horarioPicoEl.textContent = '-';
                 horarioOciosoEl.textContent = '-';
+                picoOperadorEl.textContent = '-';
                 if (flightsByRuleChart) flightsByRuleChart.destroy();
                 if (flightsByDestChart) flightsByDestChart.destroy();
+                if (hourlyFlightsChart) hourlyFlightsChart.destroy();
                 return;
             }
 
             // Calcular novas estatísticas
             let voosComerciais = 0;
             const hourlyCounts = Array(24).fill(0);
+            const hourlyOperators = Array.from({ length: 24 }, () => []);
             const commercialPrefixes = ['AZU', 'GLO', 'TAM'];
 
             data.forEach(flight => {
@@ -570,6 +589,7 @@
                     const date = new Date(flight.timestamp.seconds * 1000);
                     const hour = date.getUTCHours();
                     hourlyCounts[hour]++;
+                    hourlyOperators[hour].push(flight.responsavel);
                 }
 
                 if (commercialPrefixes.some(prefix => flight.matricula.startsWith(prefix))) {
@@ -579,6 +599,13 @@
 
             const maxVoos = Math.max(...hourlyCounts);
             const horariosPico = hourlyCounts.map((count, hour) => count === maxVoos ? `${hour}:00h` : null).filter(h => h);
+            
+            let picoOperadores = new Set();
+            hourlyCounts.forEach((count, hour) => {
+                if (count === maxVoos && maxVoos > 0) {
+                    hourlyOperators[hour].forEach(op => picoOperadores.add(op));
+                }
+            });
 
             const minVoos = Math.min(...hourlyCounts);
             const horariosOciosos = hourlyCounts.map((count, hour) => count === minVoos ? `${hour}:00h` : null).filter(h => h);
@@ -588,6 +615,7 @@
             voosComerciaisEl.textContent = voosComerciais;
             horarioPicoEl.textContent = horariosPico.length > 0 ? horariosPico.join(', ') : '-';
             horarioOciosoEl.textContent = horariosOciosos.length > 0 ? horariosOciosos.join(', ') : '-';
+            picoOperadorEl.textContent = picoOperadores.size > 0 ? [...picoOperadores].join(', ') : '-';
 
 
             // --- Gráficos existentes ---
@@ -614,16 +642,38 @@
                 type: 'bar', data: { labels: sortedDests.map(d => d[0]), datasets: [{ label: 'Nº de Voos', data: sortedDests.map(d => d[1]), backgroundColor: '#8b5cf6' }] },
                 options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
             });
+
+            // Gráfico de picos por hora
+            const hourlyLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+            if (hourlyFlightsChart) hourlyFlightsChart.destroy();
+            hourlyFlightsChart = new Chart(document.getElementById('hourlyFlightsChart'), {
+                type: 'bar',
+                data: {
+                    labels: hourlyLabels,
+                    datasets: [{
+                        label: 'Nº de Voos',
+                        data: hourlyCounts,
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
         }
         
         // --- LÓGICA DE EXPORTAÇÃO CSV ---
         function exportToCsv() {
             if (currentFlightData.length === 0) return alert("Não há dados para exportar.");
-            const headers = ["timestamp_utc", "matricula", "tipo_aeronave", "destino", "regra_voo", "pista"];
+            const headers = ["timestamp_utc", "matricula", "tipo_aeronave", "destino", "regra_voo", "pista", "responsavel"];
             let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
             currentFlightData.forEach(flight => {
                 const date = flight.timestamp ? new Date(flight.timestamp.seconds * 1000).toISOString() : "INVALID_TIMESTAMP";
-                csvContent += [date, flight.matricula, flight.tipo_aeronave, flight.destino, flight.regra_voo, flight.pista].join(",") + "\n";
+                csvContent += [date, flight.matricula, flight.tipo_aeronave, flight.destino, flight.regra_voo, flight.pista, flight.responsavel].join(",") + "\n";
             });
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
