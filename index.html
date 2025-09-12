@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise de Movimento Aeronáutico</title>
+    <!-- Tailwind CSS para um design moderno e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Biblioteca Chart.js para visualização de estatísticas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Ícones da Lucide -->
+    <script src="https://unpkg.com/lucide-react@0.292.0/dist/lucide-react.js"></script>
+    <style>
+        /* Estilo para um scrollbar mais sutil */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="app" class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
+        <header class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold text-gray-700 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 mr-3 text-blue-600"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 1 4 2 2h3l1-1-2-3 2-2 7 7-1.5 1.5.5 3c.1.5.6.9 1.1.8l.5-.2c.4-.3.6-.7.5-1.2Z"/></svg>
+                Análise de Tráfego Aéreo
+            </h1>
+            <div id="auth-status" class="text-sm text-gray-500">Conectando...</div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Coluna da Esquerda: Upload e Filtros -->
+            <div class="lg:col-span-1 flex flex-col gap-6">
+                <!-- Card de Upload -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-blue-500"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                        Upload de Arquivo
+                    </h2>
+                    <p class="text-sm text-gray-500 mb-3">Selecione um arquivo .dat ou .dta com os registros de voo.</p>
+                    <input class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" type="file" id="dataFile" accept=".dat,.dta">
+                    <button id="uploadButton" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg mt-4 hover:bg-blue-700 transition duration-300 disabled:bg-gray-400">
+                        Processar e Salvar
+                    </button>
+                    <div id="uploadStatus" class="mt-3 text-center text-sm"></div>
+                </div>
+
+                <!-- Card de Filtros -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2 flex items-center">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-green-500"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        Filtros de Pesquisa
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="startDate" class="block text-sm font-medium text-gray-700">Data Inicial</label>
+                            <input type="date" id="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label for="endDate" class="block text-sm font-medium text-gray-700">Data Final</label>
+                            <input type="date" id="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        </div>
+                        <div>
+                            <label for="filterValue" class="block text-sm font-medium text-gray-700">Matrícula, Destino ou Aeronave</label>
+                            <input type="text" id="filterValue" placeholder="Ex: AZU2878, SBCF, E295S" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        </div>
+                         <div class="flex space-x-2">
+                             <button id="filterButton" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300">Aplicar</button>
+                             <button id="clearFilterButton" class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-300">Limpar</button>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna da Direita: Dados e Estatísticas -->
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                 <!-- Card de Estatísticas -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h2 class="text-xl font-semibold mb-4 border-b pb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-purple-500"><path d="M3 3v18h18"/><path d="M18.7 8a6 6 0 0 0-6 0"/><path d="M12.7 14a6 6 0 0 0-6 0"/><path d="M9 12a3 3 0 0 0-3-3"/><path d="M9 12a3 3 0 0 0 3 3"/><path d="M15 12a3 3 0 0 0 3-3"/><path d="M15 12a3 3 0 0 0-3 3"/></svg>
+                        Estatísticas
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h3 class="font-medium text-center text-gray-600">Voos por Regra (IFR/VFR)</h3>
+                            <canvas id="flightsByRuleChart"></canvas>
+                        </div>
+                        <div>
+                             <h3 class="font-medium text-center text-gray-600">Top 5 Destinos</h3>
+                            <canvas id="flightsByDestChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabela de Dados -->
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h2 class="text-xl font-semibold flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 mr-2 text-yellow-500"><path d="M12 22V8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/><path d="M5 12a7 7 0 0 1 14 0"/><path d="M12 8a3 3 0 0 0-3-3"/></svg>
+                            Registros de Voo
+                        </h2>
+                        <button id="downloadCsvButton" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition duration-300 text-sm flex items-center">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            Download CSV
+                        </button>
+                    </div>
+                    <div class="overflow-auto" style="max-height: 500px;">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3">Data/Hora (UTC)</th>
+                                    <th scope="col" class="px-4 py-3">Matrícula</th>
+                                    <th scope="col" class="px-4 py-3">Aeronave</th>
+                                    <th scope="col" class="px-4 py-3">Destino</th>
+                                    <th scope="col" class="px-4 py-3">Regra</th>
+                                    <th scope="col" class="px-4 py-3">Pista</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody">
+                                <!-- Linhas serão inseridas dinamicamente -->
+                                <tr><td colspan="6" class="text-center p-8">Carregando dados...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Módulo JavaScript com a lógica da aplicação -->
+    <script type="module">
+        // Importações do SDK do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, getDocs, writeBatch, query, where, orderBy, limit, onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURAÇÃO E INICIALIZAÇÃO ---
+        
+        // Configuração do Firebase com as chaves fornecidas.
+        const firebaseConfig = {
+            apiKey: "AIzaSyBO0qk_81i9wrZPi3o_2SnPxOItB65cQeA",
+            authDomain: "movimento-aeronaves.firebaseapp.com",
+            projectId: "movimento-aeronaves",
+            storageBucket: "movimento-aeronaves.firebasestorage.app",
+            messagingSenderId: "217548855288",
+            appId: "1:217548855288:web:14ac15a979225bfacca80d",
+            measurementId: "G-XG0F0WK0K1"
+        };
+        const appId = firebaseConfig.projectId;
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let dbCollection; // Referência à coleção de dados
+        let userId; // ID do usuário autenticado
+        let currentFlightData = []; // Cache local dos dados exibidos
+        let unsubscribe; // Função para cancelar o listener do onSnapshot
+
+        // Gráficos
+        let flightsByRuleChart, flightsByDestChart;
+
+        // --- LÓGICA DE AUTENTICAÇÃO E INICIALIZAÇÃO ---
+
+        onAuthStateChanged(auth, user => {
+            const authStatus = document.getElementById('auth-status');
+            if (user) {
+                userId = user.uid;
+                authStatus.textContent = `Conectado (ID: ${userId.substring(0,8)}...)`;
+                authStatus.classList.add('text-green-600');
+                // A coleção é pública dentro do escopo do aplicativo
+                dbCollection = collection(db, `/artifacts/${appId}/public/data/flights`);
+                fetchAndRenderData(); // Inicia a busca de dados
+            } else {
+                authStatus.textContent = 'Não autenticado';
+                authStatus.classList.add('text-red-600');
+                signInAnonymously(auth).catch(error => {
+                    console.error("Erro na autenticação anônima:", error);
+                    authStatus.textContent = 'Falha na autenticação';
+                });
+            }
+        });
+
+        // --- LÓGICA DE PARSE E UPLOAD ---
+
+        /**
+         * Processa o conteúdo de um arquivo .dat e o converte em um array de objetos de voo.
+         * @param {string} fileContent - O conteúdo textual do arquivo.
+         * @returns {Array<Object>} - Um array com os registros de voo.
+         */
+        function parseDataFile(fileContent) {
+            const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50);
+            const records = [];
+
+            for (const line of lines) {
+                try {
+                    const dataStr = line.substring(9, 15); // DDMMYY
+                    const horarioStr = line.substring(40, 44); // HHmm
+
+                    const day = dataStr.substring(0, 2);
+                    const month = dataStr.substring(2, 4);
+                    const year = `20${dataStr.substring(4, 6)}`;
+                    const hour = horarioStr.substring(0, 2) || '00';
+                    const minute = horarioStr.substring(2, 4) || '00';
+                    
+                    if (parseInt(month) > 12 || parseInt(day) > 31) continue;
+
+                    const fullDateTime = new Date(`${year}-${month}-${day}T${hour}:${minute}:00Z`);
+
+                    if (isNaN(fullDateTime.getTime())) continue; // Ignora datas inválidas
+
+                    const record = {
+                        aeroporto: line.substring(0, 4).trim(),
+                        identificador: line.substring(4, 7).trim(),
+                        timestamp: fullDateTime,
+                        matricula: line.substring(15, 22).trim(),
+                        tipo_aeronave: line.substring(22, 27).trim(),
+                        destino: line.substring(36, 40).trim() || 'N/A',
+                        regra_voo: line.substring(44, 46).trim(),
+                        pista: line.substring(47, 49).trim(),
+                        responsavel: line.substring(56, 60).trim()
+                    };
+                    records.push(record);
+                } catch (e) {
+                    console.warn("Linha ignorada por erro de formatação:", line, e);
+                }
+            }
+            return records;
+        }
+
+        /**
+         * Salva um lote de registros no Firestore.
+         * @param {Array<Object>} records - Os registros a serem salvos.
+         */
+        async function uploadData(records) {
+            if (!records || records.length === 0) return;
+            const batch = writeBatch(db);
+            records.forEach(record => {
+                const docRef = collection(db, dbCollection.path).doc();
+                batch.set(docRef, record);
+            });
+            await batch.commit();
+        }
+
+        // --- LÓGICA DE BUSCA E RENDERIZAÇÃO ---
+
+        /**
+         * Constrói e executa a query no Firestore com base nos filtros da UI.
+         */
+        function fetchAndRenderData() {
+            if (unsubscribe) unsubscribe(); // Cancela o listener anterior para evitar duplicatas
+
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const filterValue = document.getElementById('filterValue').value.trim().toUpperCase();
+
+            let q = query(dbCollection, orderBy("timestamp", "desc"), limit(500));
+
+            if (startDate) q = query(q, where("timestamp", ">=", new Date(startDate)));
+            if (endDate) {
+                 const endOfDay = new Date(endDate);
+                 endOfDay.setUTCHours(23, 59, 59, 999);
+                 q = query(q, where("timestamp", "<=", endOfDay));
+            }
+            // Filtros de texto - Como o Firestore tem limitações, fazemos um filtro primário
+            // e depois refinamos no client-side para este caso de uso.
+            
+            const tableBody = document.getElementById('dataTableBody');
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8">Buscando dados...</td></tr>';
+
+            unsubscribe = onSnapshot(q, (querySnapshot) => {
+                let flights = [];
+                querySnapshot.forEach((doc) => {
+                    flights.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Filtro client-side para o campo de texto geral
+                if (filterValue) {
+                    flights = flights.filter(f => 
+                        f.matricula.includes(filterValue) ||
+                        f.destino.includes(filterValue) ||
+                        f.tipo_aeronave.includes(filterValue)
+                    );
+                }
+                
+                renderTable(flights);
+                renderStats(flights);
+            }, (error) => {
+                console.error("Erro ao buscar dados: ", error);
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8 text-red-500">Erro ao carregar dados.</td></tr>';
+            });
+        }
+        
+        /**
+         * Renderiza os dados na tabela HTML.
+         * @param {Array<Object>} data - Array de voos para exibir.
+         */
+        function renderTable(data) {
+            const tableBody = document.getElementById('dataTableBody');
+            tableBody.innerHTML = '';
+            currentFlightData = data;
+
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center p-8">Nenhum registro encontrado com os filtros aplicados.</td></tr>';
+                return;
+            }
+
+            data.forEach(flight => {
+                const date = new Date(flight.timestamp.seconds * 1000);
+                const formattedDate = date.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                const formattedTime = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+
+                const row = `
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${formattedDate} ${formattedTime}</td>
+                        <td class="px-4 py-3">${flight.matricula}</td>
+                        <td class="px-4 py-3">${flight.tipo_aeronave}</td>
+                        <td class="px-4 py-3">${flight.destino}</td>
+                        <td class="px-4 py-3">${flight.regra_voo}</td>
+                        <td class="px-4 py-3">${flight.pista}</td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        // --- LÓGICA DE ESTATÍSTICAS E GRÁFICOS ---
+
+        function renderStats(data) {
+            // Voos por Regra
+            const ruleCounts = data.reduce((acc, flight) => {
+                const rule = flight.regra_voo.includes('IV') ? 'IFR' : 'VFR';
+                acc[rule] = (acc[rule] || 0) + 1;
+                return acc;
+            }, { IFR: 0, VFR: 0 });
+
+            if (flightsByRuleChart) flightsByRuleChart.destroy();
+            flightsByRuleChart = new Chart(document.getElementById('flightsByRuleChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['IFR', 'VFR'],
+                    datasets: [{
+                        data: [ruleCounts.IFR, ruleCounts.VFR],
+                        backgroundColor: ['#3b82f6', '#16a34a'],
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Top 5 Destinos
+            const destCounts = data.reduce((acc, flight) => {
+                if(flight.destino && flight.destino !== 'N/A') {
+                   acc[flight.destino] = (acc[flight.destino] || 0) + 1;
+                }
+                return acc;
+            }, {});
+
+            const sortedDests = Object.entries(destCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const destLabels = sortedDests.map(d => d[0]);
+            const destData = sortedDests.map(d => d[1]);
+
+            if (flightsByDestChart) flightsByDestChart.destroy();
+            flightsByDestChart = new Chart(document.getElementById('flightsByDestChart'), {
+                type: 'bar',
+                data: {
+                    labels: destLabels,
+                    datasets: [{
+                        label: 'Nº de Voos',
+                        data: destData,
+                        backgroundColor: '#8b5cf6',
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
+            });
+        }
+        
+        // --- LÓGICA DE EXPORTAÇÃO CSV ---
+        
+        function exportToCsv() {
+            if (currentFlightData.length === 0) {
+                alert("Não há dados para exportar.");
+                return;
+            }
+
+            const headers = ["timestamp_utc", "matricula", "tipo_aeronave", "destino", "regra_voo", "pista", "responsavel"];
+            let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+
+            currentFlightData.forEach(flight => {
+                const date = new Date(flight.timestamp.seconds * 1000).toISOString();
+                const row = [
+                    date,
+                    flight.matricula,
+                    flight.tipo_aeronave,
+                    flight.destino,
+                    flight.regra_voo,
+                    flight.pista,
+                    flight.responsavel
+                ].join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `export_voos_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- EVENT LISTENERS ---
+
+        document.getElementById('uploadButton').addEventListener('click', () => {
+            const fileInput = document.getElementById('dataFile');
+            const statusDiv = document.getElementById('uploadStatus');
+            const uploadButton = document.getElementById('uploadButton');
+
+            if (fileInput.files.length === 0) {
+                statusDiv.textContent = 'Por favor, selecione um arquivo.';
+                statusDiv.className = 'text-red-500';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = async (event) => {
+                try {
+                    statusDiv.textContent = 'Processando arquivo...';
+                    uploadButton.disabled = true;
+                    
+                    const records = parseDataFile(event.target.result);
+                    if (records.length > 0) {
+                        statusDiv.textContent = `Enviando ${records.length} registros para o banco de dados...`;
+                        await uploadData(records);
+                        statusDiv.textContent = `${records.length} registros salvos com sucesso!`;
+                        statusDiv.className = 'text-green-600';
+                        fileInput.value = ''; // Limpa o input
+                    } else {
+                         statusDiv.textContent = 'Nenhum registro válido encontrado no arquivo.';
+                         statusDiv.className = 'text-yellow-600';
+                    }
+                } catch (error) {
+                    console.error("Erro no upload:", error);
+                    statusDiv.textContent = 'Erro ao processar o arquivo.';
+                    statusDiv.className = 'text-red-500';
+                } finally {
+                    uploadButton.disabled = false;
+                }
+            };
+            
+            reader.onerror = () => {
+                statusDiv.textContent = 'Erro ao ler o arquivo.';
+                statusDiv.className = 'text-red-500';
+                uploadButton.disabled = false;
+            };
+            
+            reader.readAsText(file);
+        });
+
+        document.getElementById('filterButton').addEventListener('click', fetchAndRenderData);
+        
+        document.getElementById('clearFilterButton').addEventListener('click', () => {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('filterValue').value = '';
+            fetchAndRenderData();
+        });
+
+        document.getElementById('downloadCsvButton').addEventListener('click', exportToCsv);
+
+    </script>
+</body>
+</html>
+
+
