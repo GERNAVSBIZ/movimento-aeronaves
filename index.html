@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>nálise de Movimento Aeronáutico</title>
+    <title>Análise de Movimento Aeronáutico</title>
     <!-- Tailwind CSS para um design moderno e responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Biblioteca Chart.js para visualização de estatísticas -->
@@ -229,7 +229,7 @@
             signOut
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
-            getFirestore, collection, doc, writeBatch, query, where, orderBy, limit, onSnapshot, addDoc, getDocs, deleteDoc
+            getFirestore, collection, doc, writeBatch, query, where, orderBy, onSnapshot, addDoc, getDocs, deleteDoc
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIGURAÇÃO E INICIALIZAÇÃO ---
@@ -374,61 +374,56 @@
             const records = [];
 
             for (const line of lines) {
+                let record = {
+                    timestamp: null,
+                    matricula: 'N/A',
+                    tipo_aeronave: 'N/A',
+                    destino: 'N/A',
+                    regra_voo: 'N/A',
+                    pista: ''
+                };
+
                 try {
-                    // Find the rule (IV or VV) - this is a stable anchor
+                    record.matricula = line.substring(15, 22).trim();
+                    record.tipo_aeronave = line.substring(22, 27).trim();
+
                     const ruleMatch = line.match(/(IV|VV)/);
-                    if (!ruleMatch) {
-                        console.warn("Regra (IV/VV) não encontrada, pulando linha:", line);
-                        continue;
+                    if (ruleMatch) {
+                        record.regra_voo = ruleMatch[0];
+                        const ruleIndex = ruleMatch.index;
+                        
+                        const stringAfterRule = line.substring(ruleIndex + 2);
+                        const pistaMatch = stringAfterRule.match(/(\d{2})/);
+                        record.pista = pistaMatch ? pistaMatch[1] : '';
+
+                        const stringBeforeRule = line.substring(0, ruleIndex);
+                        const timeMatches = stringBeforeRule.match(/\d{4}/g);
+                        if (timeMatches) {
+                            const horarioStr = timeMatches[timeMatches.length - 1];
+                            const timeIndex = stringBeforeRule.lastIndexOf(horarioStr);
+                            record.destino = line.substring(27, timeIndex).trim() || 'N/A';
+
+                            const dataStr = line.substring(9, 15);
+                            const day = parseInt(dataStr.substring(0, 2), 10);
+                            const month = parseInt(dataStr.substring(2, 4), 10);
+                            const year = parseInt(`20${dataStr.substring(4, 6)}`, 10);
+                            const hour = parseInt(horarioStr.substring(0, 2), 10);
+                            const minute = parseInt(horarioStr.substring(2, 4), 10);
+
+                            if (!isNaN(day) && !isNaN(month) && !isNaN(year) && !isNaN(hour) && !isNaN(minute) &&
+                                month >= 1 && month <= 12 && day >= 1 && day <= 31 && hour <= 23 && minute <= 59) {
+                                
+                                const utcTimestamp = Date.UTC(year, month - 1, day, hour, minute);
+                                if (!isNaN(utcTimestamp)) {
+                                    record.timestamp = new Date(utcTimestamp);
+                                }
+                            }
+                        }
                     }
-                    const ruleIndex = ruleMatch.index;
-                    const regra_voo = ruleMatch[0];
-
-                    // Find the last 4-digit number before the rule - this is the time
-                    const stringBeforeRule = line.substring(0, ruleIndex);
-                    const timeMatches = stringBeforeRule.match(/\d{4}/g);
-                    if (!timeMatches) {
-                        console.warn("Horário não encontrado antes da regra, pulando linha:", line);
-                        continue;
-                    }
-                    const horarioStr = timeMatches[timeMatches.length - 1];
-                    const timeIndex = stringBeforeRule.lastIndexOf(horarioStr);
-                    
-                    // Now that we have our anchors (time and rule), everything else falls into place
-                    const dataStr = line.substring(9, 15);
-                    const matricula = line.substring(15, 22).trim();
-                    const tipo_aeronave = line.substring(22, 27).trim();
-                    const destino = line.substring(27, timeIndex).trim(); // Everything between aircraft type and time
-                    
-                    const stringAfterRule = line.substring(ruleIndex + 2);
-                    const pistaMatch = stringAfterRule.match(/(\d{2})/); // First 2-digit number after rule is pista
-                    const pista = pistaMatch ? pistaMatch[1] : '';
-
-                    // Final, more robust validation
-                    const day = parseInt(dataStr.substring(0, 2), 10);
-                    const month = parseInt(dataStr.substring(2, 4), 10);
-                    const year = parseInt(`20${dataStr.substring(4, 6)}`, 10);
-                    const hour = parseInt(horarioStr.substring(0, 2), 10);
-                    const minute = parseInt(horarioStr.substring(2, 4), 10);
-
-                    if (isNaN(day) || isNaN(month) || isNaN(year) || isNaN(hour) || isNaN(minute) ||
-                        month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) {
-                        console.warn(`Data/hora inválida (${day}/${month}/${year} ${hour}:${minute}), pulando linha:`, line);
-                        continue;
-                    }
-                    
-                    // Use Date.UTC for robust date creation. It expects a 0-indexed month.
-                    const utcTimestamp = Date.UTC(year, month - 1, day, hour, minute);
-                     if (isNaN(utcTimestamp)) {
-                        console.warn("Timestamp inválido (from Date.UTC), pulando linha:", line);
-                        continue;
-                    }
-                    const fullDateTime = new Date(utcTimestamp);
-
-                    records.push({ timestamp: fullDateTime, matricula, tipo_aeronave, destino, regra_voo, pista });
-
+                    records.push(record);
                 } catch (e) {
-                    console.warn("Erro fatal ao processar linha:", line, e);
+                    console.warn("Erro fatal ao processar linha, registrando com dados parciais:", line, e);
+                    records.push(record); // Adiciona o registro mesmo que com dados incompletos
                 }
             }
             return records;
@@ -482,7 +477,7 @@
             const endDate = document.getElementById('endDate').value;
             const filterValue = document.getElementById('filterValue').value.trim().toUpperCase();
             
-            let q = query(recordsCollectionRef, orderBy("timestamp", "desc"));
+            let q = query(recordsCollectionRef); // Removido o orderBy para incluir docs com timestamp nulo
             if (startDate) q = query(q, where("timestamp", ">=", new Date(startDate)));
             if (endDate) {
                  const endOfDay = new Date(endDate);
@@ -495,6 +490,14 @@
             
             unsubscribeFromFlights = onSnapshot(q, (snapshot) => {
                 let flights = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Ordenação no lado do cliente para lidar com timestamps nulos
+                flights.sort((a, b) => {
+                    const timeA = a.timestamp ? a.timestamp.seconds : 0;
+                    const timeB = b.timestamp ? b.timestamp.seconds : 0;
+                    return timeB - timeA;
+                });
+
                 if (filterValue) {
                     flights = flights.filter(f => 
                         f.matricula.includes(filterValue) || 
@@ -520,8 +523,11 @@
                 return;
             }
             data.forEach(flight => {
-                const date = new Date(flight.timestamp.seconds * 1000);
-                const formattedDateTime = date.toLocaleString('pt-BR', { timeZone: 'UTC', dateStyle: 'short', timeStyle: 'short' });
+                const date = flight.timestamp ? new Date(flight.timestamp.seconds * 1000) : null;
+                const formattedDateTime = date 
+                    ? date.toLocaleString('pt-BR', { timeZone: 'UTC', dateStyle: 'short', timeStyle: 'short' })
+                    : '<span class="text-red-500">Data Inválida</span>';
+
                 const row = `
                     <tr class="bg-white border-b hover:bg-gray-50">
                         <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">${formattedDateTime}</td>
@@ -560,9 +566,11 @@
             const commercialPrefixes = ['AZU', 'GLO', 'TAM'];
 
             data.forEach(flight => {
-                const date = new Date(flight.timestamp.seconds * 1000);
-                const hour = date.getUTCHours();
-                hourlyCounts[hour]++;
+                if (flight.timestamp) { // Apenas conta para estatísticas se a data for válida
+                    const date = new Date(flight.timestamp.seconds * 1000);
+                    const hour = date.getUTCHours();
+                    hourlyCounts[hour]++;
+                }
 
                 if (commercialPrefixes.some(prefix => flight.matricula.startsWith(prefix))) {
                     voosComerciais++;
@@ -578,8 +586,8 @@
             // Atualizar DOM
             totalVoosEl.textContent = data.length;
             voosComerciaisEl.textContent = voosComerciais;
-            horarioPicoEl.textContent = horariosPico.join(', ');
-            horarioOciosoEl.textContent = horariosOciosos.join(', ');
+            horarioPicoEl.textContent = horariosPico.length > 0 ? horariosPico.join(', ') : '-';
+            horarioOciosoEl.textContent = horariosOciosos.length > 0 ? horariosOciosos.join(', ') : '-';
 
 
             // --- Gráficos existentes ---
@@ -614,7 +622,7 @@
             const headers = ["timestamp_utc", "matricula", "tipo_aeronave", "destino", "regra_voo", "pista"];
             let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
             currentFlightData.forEach(flight => {
-                const date = new Date(flight.timestamp.seconds * 1000).toISOString();
+                const date = flight.timestamp ? new Date(flight.timestamp.seconds * 1000).toISOString() : "INVALID_TIMESTAMP";
                 csvContent += [date, flight.matricula, flight.tipo_aeronave, flight.destino, flight.regra_voo, flight.pista].join(",") + "\n";
             });
             const encodedUri = encodeURI(csvContent);
@@ -686,502 +694,4 @@
     </script>
 </body>
 </html>
-```
-
-A única diferença entre o seu código e o que foi gerado anteriormente está na função `parseDataFile`.
-
-**O seu código:**
-
-```javascript
-// --- LÓGICA DE PARSE E UPLOAD (NOVA VERSÃO) ---
-function parseDataFile(fileContent) {
-    const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50 && !line.startsWith('SBIZAIZ0'));
-    const records = [];
-
-    for (const line of lines) {
-        try {
-            // Find the rule (IV or VV) - this is a stable anchor
-            const ruleMatch = line.match(/(IV|VV)/);
-            if (!ruleMatch) {
-                console.warn("Regra (IV/VV) não encontrada, pulando linha:", line);
-                continue;
-            }
-            const ruleIndex = ruleMatch.index;
-            const regra_voo = ruleMatch[0];
-
-            // Find the last 4-digit number before the rule - this is the time
-            const stringBeforeRule = line.substring(0, ruleIndex);
-            const timeMatches = stringBeforeRule.match(/\d{4}/g);
-            if (!timeMatches) {
-                console.warn("Horário não encontrado antes da regra, pulando linha:", line);
-                continue;
-            }
-            const horarioStr = timeMatches[timeMatches.length - 1];
-            const timeIndex = stringBeforeRule.lastIndexOf(horarioStr);
-            
-            // Now that we have our anchors (time and rule), everything else falls into place
-            const dataStr = line.substring(9, 15);
-            const matricula = line.substring(15, 22).trim();
-            const tipo_aeronave = line.substring(22, 27).trim();
-            const destino = line.substring(27, timeIndex).trim(); // Everything between aircraft type and time
-            
-            const stringAfterRule = line.substring(ruleIndex + 2);
-            const pistaMatch = stringAfterRule.match(/(\d{2})/); // First 2-digit number after rule is pista
-            const pista = pistaMatch ? pistaMatch[1] : '';
-
-            // Final, more robust validation
-            const day = parseInt(dataStr.substring(0, 2), 10);
-            const month = parseInt(dataStr.substring(2, 4), 10);
-            const year = parseInt(`20${dataStr.substring(4, 6)}`, 10);
-            const hour = parseInt(horarioStr.substring(0, 2), 10);
-            const minute = parseInt(horarioStr.substring(2, 4), 10);
-
-            if (isNaN(day) || isNaN(month) || isNaN(year) || isNaN(hour) || isNaN(minute) ||
-                month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) {
-                console.warn(`Data/hora inválida (${day}/${month}/${year} ${hour}:${minute}), pulando linha:`, line);
-                continue;
-            }
-            
-            // Use Date.UTC for robust date creation. It expects a 0-indexed month.
-            const utcTimestamp = Date.UTC(year, month - 1, day, hour, minute);
-             if (isNaN(utcTimestamp)) {
-                console.warn("Timestamp inválido (from Date.UTC), pulando linha:", line);
-                continue;
-            }
-            const fullDateTime = new Date(utcTimestamp);
-
-            records.push({ timestamp: fullDateTime, matricula, tipo_aeronave, destino, regra_voo, pista });
-
-        } catch (e) {
-            console.warn("Erro fatal ao processar linha:", line, e);
-        }
-    }
-    return records;
-}
-```
-
-**O que foi gerado:**
-
-```javascript
-// --- LÓGICA DE PARSE E UPLOAD (NOVA VERSÃO) ---
-function parseDataFile(fileContent) {
-    const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50 && !line.startsWith('SBIZAIZ0'));
-    const records = [];
-
-    for (const line of lines) {
-        try {
-            // Find the rule (IV or VV) - this is a stable anchor
-            const ruleMatch = line.match(/(IV|VV)/);
-            if (!ruleMatch) {
-                console.warn("Regra (IV/VV) não encontrada, pulando linha:", line);
-                continue;
-            }
-            const ruleIndex = ruleMatch.index;
-            const regra_voo = ruleMatch[0];
-
-            // Find the last 4-digit number before the rule - this is the time
-            const stringBeforeRule = line.substring(0, ruleIndex);
-            const timeMatches = stringBeforeRule.match(/\d{4}/g);
-            if (!timeMatches) {
-                console.warn("Horário não encontrado antes da regra, pulando linha:", line);
-                continue;
-            }
-            const horarioStr = timeMatches[timeMatches.length - 1];
-            const timeIndex = stringBeforeRule.lastIndexOf(horarioStr);
-            
-            // Now that we have our anchors (time and rule), everything else falls into place
-            const dataStr = line.substring(9, 15);
-            const matricula = line.substring(15, 22).trim();
-            const tipo_aeronave = line.substring(22, 27).trim();
-            const destino = line.substring(27, timeIndex).trim(); // Everything between aircraft type and time
-            
-            const stringAfterRule = line.substring(ruleIndex + 2);
-            const pistaMatch = stringAfterRule.match(/(\d{2})/); // First 2-digit number after rule is pista
-            const pista = pistaMatch ? pistaMatch[1] : '';
-
-            // Final, more robust validation
-            const day = parseInt(dataStr.substring(0, 2), 10);
-            const month = parseInt(dataStr.substring(2, 4), 10);
-            const year = parseInt(`20${dataStr.substring(4, 6)}`, 10);
-            const hour = parseInt(horarioStr.substring(0, 2), 10);
-            const minute = parseInt(horarioStr.substring(2, 4), 10);
-
-            if (isNaN(day) || isNaN(month) || isNaN(year) || isNaN(hour) || isNaN(minute) ||
-                month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) {
-                console.warn(`Data/hora inválida (${day}/${month}/${year} ${hour}:${minute}), pulando linha:`, line);
-                continue;
-            }
-            
-            // Use Date.UTC for robust date creation. It expects a 0-indexed month.
-            const utcTimestamp = Date.UTC(year, month - 1, day, hour, minute);
-             if (isNaN(utcTimestamp)) {
-                console.warn("Timestamp inválido (from Date.UTC), pulando linha:", line);
-                continue;
-            }
-            const fullDateTime = new Date(utcTimestamp);
-
-            records.push({ timestamp: fullDateTime, matricula, tipo_aeronave, destino, regra_voo, pista });
-
-        } catch (e) {
-            console.warn("Erro fatal ao processar linha:", line, e);
-        }
-    }
-    return records;
-}
-```
-
-A única diferença entre o seu código e o que foi gerado anteriormente está na função `parseDataFile`.
-
-**O seu código:**
-
-```javascript
-// --- LÓGICA DE PARSE E UPLOAD (NOVA VERSÃO) ---
-function parseDataFile(fileContent) {
-    const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50 && !line.startsWith('SBIZAIZ0'));
-    const records = [];
-
-    for (const line of lines) {
-        try {
-            // Find the rule (IV or VV) - this is a stable anchor
-            const ruleMatch = line.match(/(IV|VV)/);
-            if (!ruleMatch) {
-                console.warn("Regra (IV/VV) não encontrada, pulando linha:", line);
-                continue;
-            }
-            const ruleIndex = ruleMatch.index;
-            const regra_voo = ruleMatch[0];
-
-            // Find the last 4-digit number before the rule - this is the time
-            const stringBeforeRule = line.substring(0, ruleIndex);
-            const timeMatches = stringBeforeRule.match(/\d{4}/g);
-            if (!timeMatches) {
-                console.warn("Horário não encontrado antes da regra, pulando linha:", line);
-                continue;
-            }
-            const horarioStr = timeMatches[timeMatches.length - 1];
-            const timeIndex = stringBeforeRule.lastIndexOf(horarioStr);
-            
-            // Now that we have our anchors (time and rule), everything else falls into place
-            const dataStr = line.substring(9, 15);
-            const matricula = line.substring(15, 22).trim();
-            const tipo_aeronave = line.substring(22, 27).trim();
-            const destino = line.substring(27, timeIndex).trim(); // Everything between aircraft type and time
-            
-            const stringAfterRule = line.substring(ruleIndex + 2);
-            const pistaMatch = stringAfterRule.match(/(\d{2})/); // First 2-digit number after rule is pista
-            const pista = pistaMatch ? pistaMatch[1] : '';
-
-            // Final, more robust validation
-            const day = parseInt(dataStr.substring(0, 2), 10);
-            const month = parseInt(dataStr.substring(2, 4), 10);
-            const year = parseInt(`20${dataStr.substring(4, 6)}`, 10);
-            const hour = parseInt(horarioStr.substring(0, 2), 10);
-            const minute = parseInt(horarioStr.substring(2, 4), 10);
-
-            if (isNaN(day) || isNaN(month) || isNaN(year) || isNaN(hour) || isNaN(minute) ||
-                month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) {
-                console.warn(`Data/hora inválida (${day}/${month}/${year} ${hour}:${minute}), pulando linha:`, line);
-                continue;
-            }
-            
-            // Use Date.UTC for robust date creation. It expects a 0-indexed month.
-            const utcTimestamp = Date.UTC(year, month - 1, day, hour, minute);
-             if (isNaN(utcTimestamp)) {
-                console.warn("Timestamp inválido (from Date.UTC), pulando linha:", line);
-                continue;
-            }
-            const fullDateTime = new Date(utcTimestamp);
-
-            records.push({ timestamp: fullDateTime, matricula, tipo_aeronave, destino, regra_voo, pista });
-
-        } catch (e) {
-            console.warn("Erro fatal ao processar linha:", line, e);
-        }
-    }
-    return records;
-}
-```
-
-**O que foi gerado:**
-
-```javascript
-// --- LÓGICA DE PARSE E UPLOAD (NOVA VERSÃO) ---
-function parseDataFile(fileContent) {
-    const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50 && !line.startsWith('SBIZAIZ0'));
-    const records = [];
-
-    for (const line of lines) {
-        try {
-            // Find the rule (IV or VV) - this is a stable anchor
-            const ruleMatch = line.match(/(IV|VV)/);
-            if (!ruleMatch) {
-                console.warn("Regra (IV/VV) não encontrada, pulando linha:", line);
-                continue;
-            }
-            const ruleIndex = ruleMatch.index;
-            const regra_voo = ruleMatch[0];
-
-            // Find the last 4-digit number before the rule - this is the time
-            const stringBeforeRule = line.substring(0, ruleIndex);
-            const timeMatches = stringBeforeRule.match(/\d{4}/g);
-            if (!timeMatches) {
-                console.warn("Horário não encontrado antes da regra, pulando linha:", line);
-                continue;
-            }
-            const horarioStr = timeMatches[timeMatches.length - 1];
-            const timeIndex = stringBeforeRule.lastIndexOf(horarioStr);
-            
-            // Now that we have our anchors (time and rule), everything else falls into place
-            const dataStr = line.substring(9, 15);
-            const matricula = line.substring(15, 22).trim();
-            const tipo_aeronave = line.substring(22, 27).trim();
-            const destino = line.substring(27, timeIndex).trim(); // Everything between aircraft type and time
-            
-            const stringAfterRule = line.substring(ruleIndex + 2);
-            const pistaMatch = stringAfterRule.match(/(\d{2})/); // First 2-digit number after rule is pista
-            const pista = pistaMatch ? pistaMatch[1] : '';
-
-            // Final, more robust validation
-            const day = parseInt(dataStr.substring(0, 2), 10);
-            const month = parseInt(dataStr.substring(2, 4), 10);
-            const year = parseInt(`20${dataStr.substring(4, 6)}`, 10);
-            const hour = parseInt(horarioStr.substring(0, 2), 10);
-            const minute = parseInt(horarioStr.substring(2, 4), 10);
-
-            if (isNaN(day) || isNaN(month) || isNaN(year) || isNaN(hour) || isNaN(minute) ||
-                month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) {
-                console.warn(`Data/hora inválida (${day}/${month}/${year} ${hour}:${minute}), pulando linha:`, line);
-                continue;
-            }
-            
-            // Use Date.UTC for robust date creation. It expects a 0-indexed month.
-            const utcTimestamp = Date.UTC(year, month - 1, day, hour, minute);
-             if (isNaN(utcTimestamp)) {
-                console.warn("Timestamp inválido (from Date.UTC), pulando linha:", line);
-                continue;
-            }
-            const fullDateTime = new Date(utcTimestamp);
-
-            records.push({ timestamp: fullDateTime, matricula, tipo_aeronave, destino, regra_voo, pista });
-
-        } catch (e) {
-            console.warn("Erro fatal ao processar linha:", line, e);
-        }
-    }
-    return records;
-}
-```
-
-A única diferença entre o seu código e o que foi gerado anteriormente está na função `parseDataFile`.
-
-**O seu código:**
-
-```javascript
-// --- LÓGICA DE PARSE E UPLOAD (NOVA VERSÃO) ---
-function parseDataFile(fileContent) {
-    const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50 && !line.startsWith('SBIZAIZ0'));
-    const records = [];
-
-    for (const line of lines) {
-        try {
-            // Find the rule (IV or VV) - this is a stable anchor
-            const ruleMatch = line.match(/(IV|VV)/);
-            if (!ruleMatch) {
-                console.warn("Regra (IV/VV) não encontrada, pulando linha:", line);
-                continue;
-            }
-            const ruleIndex = ruleMatch.index;
-            const regra_voo = ruleMatch[0];
-
-            // Find the last 4-digit number before the rule - this is the time
-            const stringBeforeRule = line.substring(0, ruleIndex);
-            const timeMatches = stringBeforeRule.match(/\d{4}/g);
-            if (!timeMatches) {
-                console.warn("Horário não encontrado antes da regra, pulando linha:", line);
-                continue;
-            }
-            const horarioStr = timeMatches[timeMatches.length - 1];
-            const timeIndex = stringBeforeRule.lastIndexOf(horarioStr);
-            
-            // Now that we have our anchors (time and rule), everything else falls into place
-            const dataStr = line.substring(9, 15);
-            const matricula = line.substring(15, 22).trim();
-            const tipo_aeronave = line.substring(22, 27).trim();
-            const destino = line.substring(27, timeIndex).trim(); // Everything between aircraft type and time
-            
-            const stringAfterRule = line.substring(ruleIndex + 2);
-            const pistaMatch = stringAfterRule.match(/(\d{2})/); // First 2-digit number after rule is pista
-            const pista = pistaMatch ? pistaMatch[1] : '';
-
-            // Final, more robust validation
-            const day = parseInt(dataStr.substring(0, 2), 10);
-            const month = parseInt(dataStr.substring(2, 4), 10);
-            const year = parseInt(`20${dataStr.substring(4, 6)}`, 10);
-            const hour = parseInt(horarioStr.substring(0, 2), 10);
-            const minute = parseInt(horarioStr.substring(2, 4), 10);
-
-            if (isNaN(day) || isNaN(month) || isNaN(year) || isNaN(hour) || isNaN(minute) ||
-                month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) {
-                console.warn(`Data/hora inválida (${day}/${month}/${year} ${hour}:${minute}), pulando linha:`, line);
-                continue;
-            }
-            
-            // Use Date.UTC for robust date creation. It expects a 0-indexed month.
-            const utcTimestamp = Date.UTC(year, month - 1, day, hour, minute);
-             if (isNaN(utcTimestamp)) {
-                console.warn("Timestamp inválido (from Date.UTC), pulando linha:", line);
-                continue;
-            }
-            const fullDateTime = new Date(utcTimestamp);
-
-            records.push({ timestamp: fullDateTime, matricula, tipo_aeronave, destino, regra_voo, pista });
-
-        } catch (e) {
-            console.warn("Erro fatal ao processar linha:", line, e);
-        }
-    }
-    return records;
-}
-```
-
-**O que foi gerado:**
-
-```javascript
-// --- LÓGICA DE PARSE E UPLOAD (NOVA VERSÃO) ---
-function parseDataFile(fileContent) {
-    const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50 && !line.startsWith('SBIZAIZ0'));
-    const records = [];
-
-    for (const line of lines) {
-        try {
-            // Find the rule (IV or VV) - this is a stable anchor
-            const ruleMatch = line.match(/(IV|VV)/);
-            if (!ruleMatch) {
-                console.warn("Regra (IV/VV) não encontrada, pulando linha:", line);
-                continue;
-            }
-            const ruleIndex = ruleMatch.index;
-            const regra_voo = ruleMatch[0];
-
-            // Find the last 4-digit number before the rule - this is the time
-            const stringBeforeRule = line.substring(0, ruleIndex);
-            const timeMatches = stringBeforeRule.match(/\d{4}/g);
-            if (!timeMatches) {
-                console.warn("Horário não encontrado antes da regra, pulando linha:", line);
-                continue;
-            }
-            const horarioStr = timeMatches[timeMatches.length - 1];
-            const timeIndex = stringBeforeRule.lastIndexOf(horarioStr);
-            
-            // Now that we have our anchors (time and rule), everything else falls into place
-            const dataStr = line.substring(9, 15);
-            const matricula = line.substring(15, 22).trim();
-            const tipo_aeronave = line.substring(22, 27).trim();
-            const destino = line.substring(27, timeIndex).trim(); // Everything between aircraft type and time
-            
-            const stringAfterRule = line.substring(ruleIndex + 2);
-            const pistaMatch = stringAfterRule.match(/(\d{2})/); // First 2-digit number after rule is pista
-            const pista = pistaMatch ? pistaMatch[1] : '';
-
-            // Final, more robust validation
-            const day = parseInt(dataStr.substring(0, 2), 10);
-            const month = parseInt(dataStr.substring(2, 4), 10);
-            const year = parseInt(`20${dataStr.substring(4, 6)}`, 10);
-            const hour = parseInt(horarioStr.substring(0, 2), 10);
-            const minute = parseInt(horarioStr.substring(2, 4), 10);
-
-            if (isNaN(day) || isNaN(month) || isNaN(year) || isNaN(hour) || isNaN(minute) ||
-                month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) {
-                console.warn(`Data/hora inválida (${day}/${month}/${year} ${hour}:${minute}), pulando linha:`, line);
-                continue;
-            }
-            
-            // Use Date.UTC for robust date creation. It expects a 0-indexed month.
-            const utcTimestamp = Date.UTC(year, month - 1, day, hour, minute);
-             if (isNaN(utcTimestamp)) {
-                console.warn("Timestamp inválido (from Date.UTC), pulando linha:", line);
-                continue;
-            }
-            const fullDateTime = new Date(utcTimestamp);
-
-            records.push({ timestamp: fullDateTime, matricula, tipo_aeronave, destino, regra_voo, pista });
-
-        } catch (e) {
-            console.warn("Erro fatal ao processar linha:", line, e);
-        }
-    }
-    return records;
-}
-```
-
-A única diferença entre o seu código e o que foi gerado anteriormente está na função `parseDataFile`.
-
-**O seu código:**
-
-```javascript
-// --- LÓGICA DE PARSE E UPLOAD (NOVA VERSÃO) ---
-function parseDataFile(fileContent) {
-    const lines = fileContent.toString().split('\n').filter(line => line.trim().length > 50 && !line.startsWith('SBIZAIZ0'));
-    const records = [];
-
-    for (const line of lines) {
-        try {
-            // Find the rule (IV or VV) - this is a stable anchor
-            const ruleMatch = line.match(/(IV|VV)/);
-            if (!ruleMatch) {
-                console.warn("Regra (IV/VV) não encontrada, pulando linha:", line);
-                continue;
-            }
-            const ruleIndex = ruleMatch.index;
-            const regra_voo = ruleMatch[0];
-
-            // Find the last 4-digit number before the rule - this is the time
-            const stringBeforeRule = line.substring(0, ruleIndex);
-            const timeMatches = stringBeforeRule.match(/\d{4}/g);
-            if (!timeMatches) {
-                console.warn("Horário não encontrado antes da regra, pulando linha:", line);
-                continue;
-            }
-            const horarioStr = timeMatches[timeMatches.length - 1];
-            const timeIndex = stringBeforeRule.lastIndexOf(horarioStr);
-            
-            // Now that we have our anchors (time and rule), everything else falls into place
-            const dataStr = line.substring(9, 15);
-            const matricula = line.substring(15, 22).trim();
-            const tipo_aeronave = line.substring(22, 27).trim();
-            const destino = line.substring(27, timeIndex).trim(); // Everything between aircraft type and time
-            
-            const stringAfterRule = line.substring(ruleIndex + 2);
-            const pistaMatch = stringAfterRule.match(/(\d{2})/); // First 2-digit number after rule is pista
-            const pista = pistaMatch ? pistaMatch[1] : '';
-
-            // Final, more robust validation
-            const day = parseInt(dataStr.substring(0, 2), 10);
-            const month = parseInt(dataStr.substring(2, 4), 10);
-            const year = parseInt(`20${dataStr.substring(4, 6)}`, 10);
-            const hour = parseInt(horarioStr.substring(0, 2), 10);
-            const minute = parseInt(horarioStr.substring(2, 4), 10);
-
-            if (isNaN(day) || isNaN(month) || isNaN(year) || isNaN(hour) || isNaN(minute) ||
-                month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) {
-                console.warn(`Data/hora inválida (${day}/${month}/${year} ${hour}:${minute}), pulando linha:`, line);
-                continue;
-            }
-            
-            // Use Date.UTC for robust date creation. It expects a 0-indexed month.
-            const utcTimestamp = Date.UTC(year, month - 1, day, hour, minute);
-             if (isNaN(utcTimestamp)) {
-                console.warn("Timestamp inválido (from Date.UTC), pulando linha:", line);
-                continue;
-            }
-            const fullDateTime = new Date(utcTimestamp);
-
-            records.push({ timestamp: fullDateTime, matricula, tipo_aeronave, destino, regra_voo, pista });
-
-        } catch (e) {
-            console.warn("Erro fatal ao processar linha:", line, e);
-        }
-    }
-    return records;
-}
 
