@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análise de Movimento Aeronáutico</title>
+    <title>nálise de Movimento Aeronáutico</title>
     <!-- Tailwind CSS para um design moderno e responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Biblioteca Chart.js para visualização de estatísticas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Configuração do Tailwind personalizada */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        /* Configuração do Tailwind para cores customizadas */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
-        /* Scrollbar personalizada */
+        /* Estilo para um scrollbar mais sutil */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #f1f5f9;
+            background: #f8fafc;
             border-radius: 3px;
         }
         ::-webkit-scrollbar-thumb {
@@ -30,13 +30,13 @@
         ::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(135deg, #4f46e5, #7c3aed);
         }
-
+        
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
         }
-
+        
         /* Animações personalizadas */
         @keyframes fadeInUp {
             from {
@@ -48,7 +48,7 @@
                 transform: translateY(0);
             }
         }
-
+        
         @keyframes slideInRight {
             from {
                 opacity: 0;
@@ -59,261 +59,207 @@
                 transform: translateX(0);
             }
         }
-
+        
         @keyframes pulse {
             0%, 100% {
                 opacity: 1;
             }
             50% {
-                opacity: 0.5;
+                opacity: 0.8;
             }
         }
-
-        @keyframes shimmer {
-            0% {
-                background-position: -468px 0;
-            }
-            100% {
-                background-position: 468px 0;
-            }
-        }
-
+        
         .animate-fade-in-up {
             animation: fadeInUp 0.6s ease-out;
         }
-
+        
         .animate-slide-in-right {
             animation: slideInRight 0.6s ease-out;
         }
-
+        
         .animate-pulse-custom {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
-
-        .shimmer {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-        }
-
-        /* Estilos para notificação Toast */
+        
+        /* Estilos para a notificação Toast */
         #toast {
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: translateY(-100px);
-            opacity: 0;
+            backdrop-filter: blur(10px);
         }
-
-        #toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        /* Ícone chevron animado */
+        
         .chevron-icon {
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        
         .expanded .chevron-icon {
             transform: rotate(180deg);
         }
-
+        
         /* Efeitos de hover melhorados */
         .card-hover {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
+        
         .card-hover:hover {
             transform: translateY(-4px);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        
+        /* Botões com gradientes */
+        .btn-gradient-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            transform: translateY(-1px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        
+        .btn-gradient-primary:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
         }
-
-        .btn-secondary {
-            background: linear-gradient(135deg, #10b981, #059669);
+        
+        .btn-gradient-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        .btn-secondary:hover {
-            background: linear-gradient(135deg, #059669, #047857);
-            transform: translateY(-1px);
+        
+        .btn-gradient-success:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.4);
         }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
+        
+        .btn-gradient-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        .btn-danger:hover {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            transform: translateY(-1px);
+        
+        .btn-gradient-danger:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.4);
         }
-
-        /* Inputs melhorados */
-        .input-modern {
+        
+        /* Inputs com foco melhorado */
+        .input-focus {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid #e2e8f0;
         }
-
-        .input-modern:focus {
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-            transform: translateY(-1px);
+        
+        .input-focus:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.2);
         }
-
-        /* Tabela melhorada */
-        .table-row {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .table-row:hover {
-            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            transform: scale(1.01);
-        }
-
-        /* Loading states */
-        .loading-skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 4px;
-        }
-
+        
         /* Glassmorphism effect */
         .glass {
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-
-        /* Status indicators */
-        .status-indicator {
+        
+        .glass-dark {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Efeito de brilho nos cards */
+        .shine-effect {
             position: relative;
+            overflow: hidden;
         }
-
-        .status-indicator::before {
+        
+        .shine-effect::before {
             content: '';
             position: absolute;
             top: 0;
-            right: 0;
-            width: 8px;
-            height: 8px;
-            background: #10b981;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
         }
-
-        /* Gradient text */
-        .gradient-text {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        
+        .shine-effect:hover::before {
+            left: 100%;
         }
     </style>
 </head>
 <body class="text-gray-800">
 
     <!-- Notificação Toast -->
-    <div id="toast" class="fixed top-4 right-4 z-50 max-w-sm">
-        <div class="bg-white border border-gray-200 rounded-xl shadow-lg p-4">
+    <div id="toast" class="fixed top-4 right-4 z-50 opacity-0 transform translate-x-full">
+        <div class="glass rounded-xl p-4 shadow-2xl border max-w-sm">
             <div class="flex items-center">
                 <div id="toast-icon" class="flex-shrink-0 w-6 h-6 mr-3"></div>
-                <div id="toast-message" class="text-sm font-medium text-gray-900"></div>
-                <button id="toast-close" class="ml-auto flex-shrink-0 text-gray-400 hover:text-gray-600">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                    </svg>
-                </button>
+                <div id="toast-message" class="text-sm font-medium text-gray-800"></div>
             </div>
         </div>
     </div>
 
     <!-- Container da Tela de Login -->
     <div id="login-container" class="flex items-center justify-center min-h-screen p-4">
-        <div class="w-full max-w-md animate-fade-in-up">
-            <div class="glass rounded-2xl p-8 shadow-2xl">
-                <div class="text-center mb-8">
-                    <div class="mx-auto w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 1 4 2 2h3l1-1-2-3 2-2 7 7-1.5 1.5.5 3c.1.5.6.9 1.1.8l.5-.2c.4-.3.6-.7.5-1.2Z"/>
-                        </svg>
-                    </div>
-                    <h2 class="text-3xl font-bold gradient-text mb-2">Bem-vindo</h2>
-                    <p class="text-white/80">Acesse para continuar</p>
+        <div class="w-full max-w-md glass rounded-2xl p-8 shadow-2xl animate-fade-in-up">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full mb-4 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 text-white">
+                        <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 1 4 2 2h3l1-1-2-3 2-2 7 7-1.5 1.5.5 3c.1.5.6.9 1.1.8l.5-.2c.4-.3.6-.7.5-1.2Z"/>
+                    </svg>
                 </div>
-                
-                <form id="login-form" class="space-y-6">
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-white/90 mb-2">Email</label>
-                        <input type="email" id="email" required 
-                               class="input-modern w-full px-4 py-3 bg-white/90 border-0 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none text-gray-900">
-                    </div>
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-white/90 mb-2">Senha</label>
-                        <input type="password" id="password" required 
-                               class="input-modern w-full px-4 py-3 bg-white/90 border-0 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none text-gray-900">
-                    </div>
-                    <div id="login-error" class="text-red-300 text-sm text-center"></div>
-                    <div class="flex space-x-4 pt-2">
-                        <button type="button" id="register-button" 
-                                class="flex-1 py-3 px-6 border border-white/30 rounded-xl text-sm font-medium text-white hover:bg-white/10 focus:outline-none transition-all duration-300">
-                            Registrar
-                        </button>
-                        <button type="submit" id="login-button" 
-                                class="btn-primary flex-1 py-3 px-6 rounded-xl text-sm font-medium text-white focus:outline-none">
-                            Entrar
-                        </button>
-                    </div>
-                </form>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Bem-vindo</h2>
+                <p class="text-gray-600">Acesse para continuar</p>
             </div>
+            
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                    <input type="email" id="email" required class="input-focus w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">Senha</label>
+                    <input type="password" id="password" required class="input-focus w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div id="login-error" class="text-red-500 text-sm text-center font-medium"></div>
+                <div class="flex space-x-4 pt-2">
+                    <button type="button" id="register-button" class="flex-1 py-3 px-6 border border-gray-300 rounded-xl shadow-sm text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-300">
+                        Registrar
+                    </button>
+                    <button type="submit" id="login-button" class="flex-1 btn-gradient-primary py-3 px-6 rounded-xl shadow-sm text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Entrar
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
     <!-- Container Principal da Aplicação (inicialmente oculto) -->
-    <div id="app" class="min-h-screen bg-gray-50 hidden">
-        <div class="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
-            <!-- Header melhorado -->
-            <header class="glass rounded-2xl p-6 mb-8 animate-fade-in-up">
-                <div class="flex flex-wrap items-center justify-between gap-4">
-                    <h1 class="text-3xl font-bold gradient-text flex items-center">
-                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 1 4 2 2h3l1-1-2-3 2-2 7 7-1.5 1.5.5 3c.1.5.6.9 1.1.8l.5-.2c.4-.3.6-.7.5-1.2Z"/>
-                            </svg>
-                        </div>
-                        Análise de Tráfego Aéreo
-                    </h1>
-                    <div id="auth-status" class="flex items-center gap-4">
-                        <div class="status-indicator">
-                            <span id="user-email" class="text-gray-600 font-medium"></span>
-                        </div>
-                        <button id="logout-button" class="btn-danger py-2 px-4 rounded-xl text-white font-medium text-sm">
-                            Sair
-                        </button>
+    <div id="app" class="min-h-screen p-4 md:p-6 lg:p-8 hidden">
+        <div class="max-w-7xl mx-auto">
+            <header class="flex flex-wrap items-center justify-between mb-8 gap-4 animate-fade-in-up">
+                <h1 class="text-4xl font-bold text-white flex items-center">
+                    <div class="inline-flex items-center justify-center w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl mr-4 shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7 text-white">
+                            <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 1 4 2 2h3l1-1-2-3 2-2 7 7-1.5 1.5.5 3c.1.5.6.9 1.1.8l.5-.2c.4-.3.6-.7.5-1.2Z"/>
+                        </svg>
                     </div>
+                    Análise de Tráfego Aéreo
+                </h1>
+                <div id="auth-status" class="flex items-center gap-4 text-sm">
+                    <span id="user-email" class="text-white/90 font-medium"></span>
+                    <button id="logout-button" class="btn-gradient-danger font-semibold py-2 px-6 rounded-xl text-sm shadow-lg">
+                        Sair
+                    </button>
                 </div>
             </header>
 
             <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Coluna da Esquerda: Upload e Filtros -->
-                <div class="lg:col-span-1 flex flex-col gap-8 animate-slide-in-right">
+                <div class="lg:col-span-1 flex flex-col gap-8 animate-fade-in-up" style="animation-delay: 0.2s;">
                     <!-- Card de Gerenciamento de Arquivos -->
-                    <div class="card-hover bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                        <h2 class="text-xl font-semibold mb-6 pb-4 border-b border-gray-100 flex items-center">
-                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                    <polyline points="17 8 12 3 7 8"/>
-                                    <line x1="12" x2="12" y1="3" y2="15"/>
+                    <div class="glass rounded-2xl p-6 shadow-2xl card-hover shine-effect">
+                        <h2 class="text-xl font-bold mb-6 pb-3 border-b border-gray-200/50 flex items-center text-gray-800">
+                            <div class="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg mr-3 shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
                                 </svg>
                             </div>
                             Gerenciador de Arquivos
@@ -321,41 +267,811 @@
                         
                         <div class="space-y-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-3">Enviar novo arquivo</label>
-                                <div class="relative">
-                                    <input class="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-blue-50 file:to-indigo-50 file:text-blue-700 hover:file:from-blue-100 hover:file:to-indigo-100 transition-all duration-300" 
-                                           type="file" id="dataFile" accept=".dat,.dta">
-                                </div>
-                                <button id="uploadButton" class="btn-primary w-full py-3 px-6 rounded-xl font-medium mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">Enviar novo arquivo</label>
+                                <input class="block w-full text-sm text-gray-600 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gradient-to-r file:from-blue-50 file:to-indigo-50 file:text-blue-700 hover:file:from-blue-100 hover:file:to-indigo-100 file:transition-all file:duration-300 file:shadow-md" type="file" id="dataFile" accept=".dat,.dta">
+                                <button id="uploadButton" class="w-full btn-gradient-primary font-bold py-3 px-6 rounded-xl mt-4 shadow-lg text-white">
                                     Enviar e Salvar
                                 </button>
-                                <div id="uploadStatus" class="mt-3 text-center text-sm"></div>
+                                <div id="uploadStatus" class="mt-3 text-center text-sm font-medium"></div>
                             </div>
 
-                            <div class="border-t border-gray-100 pt-6">
-                                <label for="fileList" class="block text-sm font-medium text-gray-700 mb-3">Selecionar arquivo existente</label>
-                                <select id="fileList" class="input-modern w-full px-4 py-3 rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-0">
-                                </select>
+                            <div class="border-t border-gray-200/50 pt-6">
+                                <label for="fileList" class="block text-sm font-semibold text-gray-700 mb-3">Selecionar arquivo existente</label>
+                                <select id="fileList" class="w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:ring-opacity-50 py-3 px-4 bg-white/80 transition-all duration-300"></select>
                                 <div class="flex space-x-3 mt-4">
-                                    <button id="loadButton" class="btn-secondary flex-1 py-3 px-4 rounded-xl font-medium text-white">
-                                        Carregar
-                                    </button>
-                                    <button id="deleteButton" class="btn-danger flex-1 py-3 px-4 rounded-xl font-medium text-white">
-                                        Deletar
-                                    </button>
+                                    <button id="loadButton" class="flex-1 btn-gradient-success font-bold py-3 px-4 rounded-xl shadow-lg text-white">Carregar</button>
+                                    <button id="deleteButton" class="flex-1 btn-gradient-danger font-bold py-3 px-4 rounded-xl shadow-lg text-white">Deletar</button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Card de Filtros -->
-                    <div class="card-hover bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                        <h2 class="text-xl font-semibold mb-6 pb-4 border-b border-gray-100 flex items-center">
-                            <div class="w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center mr-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <div class="glass rounded-2xl p-6 shadow-2xl card-hover shine-effect">
+                        <h2 class="text-xl font-bold mb-6 pb-3 border-b border-gray-200/50 flex items-center text-gray-800">
+                            <div class="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg mr-3 shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
                                     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
                                 </svg>
                             </div>
                             Filtros de Pesquisa
                         </h2>
                         <div class="space-y-5">
+                            <div>
+                                <label for="startDate" class="block text-sm font-semibold text-gray-700 mb-2">Data Inicial</label>
+                                <input type="date" id="startDate" class="input-focus w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:ring-opacity-50 py-3 px-4 bg-white/80">
+                            </div>
+                            <div>
+                                <label for="endDate" class="block text-sm font-semibold text-gray-700 mb-2">Data Final</label>
+                                <input type="date" id="endDate" class="input-focus w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:ring-opacity-50 py-3 px-4 bg-white/80">
+                            </div>
+                            <div>
+                                <label for="filterValue" class="block text-sm font-semibold text-gray-700 mb-2">Matrícula, Destino ou Aeronave</label>
+                                <input type="text" id="filterValue" placeholder="Ex: AZU2878, SBCF, E295S" class="input-focus w-full rounded-xl border-gray-200 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:ring-opacity-50 py-3 px-4 bg-white/80">
+                            </div>
+                            <div class="flex space-x-3 pt-2">
+                                <button id="filterButton" class="flex-1 btn-gradient-success font-bold py-3 px-4 rounded-xl shadow-lg text-white">Aplicar</button>
+                                <button id="clearFilterButton" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-lg">Limpar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna da Direita: Dados e Estatísticas -->
+                <div class="lg:col-span-2 flex flex-col gap-8 animate-slide-in-right" style="animation-delay: 0.4s;">
+                    <!-- Card de Estatísticas -->
+                    <div class="glass rounded-2xl p-6 shadow-2xl card-hover shine-effect">
+                        <h2 class="text-xl font-bold mb-6 pb-3 border-b border-gray-200/50 flex items-center text-gray-800">
+                            <div class="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg mr-3 shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                                    <path d="M3 3v18h18"/><path d="M18.7 8a6 6 0 0 0-6 0"/><path d="M12.7 14a6 6 0 0 0-6 0"/>
+                                </svg>
+                            </div>
+                            Estatísticas
+                        </h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="relative h-64 bg-white/50 rounded-xl p-4 shadow-inner">
+                                <h3 class="font-semibold text-center text-gray-700 mb-2">Voos por Regra (IFR/VFR)</h3>
+                                <canvas id="flightsByRuleChart"></canvas>
+                            </div>
+                            <div class="relative h-64 bg-white/50 rounded-xl p-4 shadow-inner">
+                                <h3 class="font-semibold text-center text-gray-700 mb-2">Top 5 Destinos</h3>
+                                <canvas id="flightsByDestChart"></canvas>
+                            </div>
+                            
+                            <!-- Estatísticas Numéricas -->
+                            <div class="md:col-span-2 mt-6 pt-6 border-t border-gray-200/50 space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 shadow-sm">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-gray-700">Total de Voos:</span>
+                                            <span id="total-voos" class="font-bold text-2xl text-blue-600">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 shadow-sm">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-gray-700">Voos Comerciais:</span>
+                                            <span id="voos-comerciais" class="font-bold text-2xl text-green-600">0</span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 shadow-sm">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-gray-700">Horário de Pico:</span>
+                                            <span id="horario-pico" class="font-bold text-lg text-orange-600">-</span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-4 shadow-sm">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-gray-700">Horário Ocioso:</span>
+                                            <span id="horario-ocioso" class="font-bold text-lg text-red-600">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Gráfico de Picos por Hora (Expansível) -->
+                            <div class="md:col-span-2 mt-8 pt-6 border-t border-gray-200/50">
+                                <div id="hourly-chart-header" class="p-6 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl shadow-md flex justify-between items-center cursor-pointer transition-all duration-300 hover:from-blue-500/30 hover:to-purple-500/30">
+                                    <h4 class="text-lg font-bold text-gray-800 flex items-center">
+                                        <div class="inline-flex items-center justify-center w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mr-3 shadow-sm">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                                            </svg>
+                                        </div>
+                                        Operador do Pico Absoluto
+                                    </h4>
+                                    <div class="flex items-center">
+                                        <p id="pico-operador" class="font-bold text-2xl text-gray-800 mr-4">-</p>
+                                        <svg id="chevron-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-gray-600 chevron-icon">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div id="hourly-chart-body" class="relative h-80 mt-6 bg-white/50 rounded-xl p-4 shadow-inner hidden">
+                                    <h3 class="font-semibold text-center text-gray-700 mb-4">Movimento por Hora (Média Mensal)</h3>
+                                    <canvas id="hourlyFlightsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tabela de Dados -->
+                    <div class="glass rounded-2xl p-6 shadow-2xl card-hover shine-effect">
+                        <div class="flex justify-between items-center mb-6 pb-3 border-b border-gray-200/50">
+                            <h2 class="text-xl font-bold flex items-center text-gray-800">
+                                <div class="inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg mr-3 shadow-md">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                                        <path d="M12 22V8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/>
+                                    </svg>
+                                </div>
+                                Registros de Voo
+                            </h2>
+                            <button id="downloadCsvButton" class="bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-all duration-300 text-sm flex items-center shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+                                </svg>
+                                Download CSV
+                            </button>
+                        </div>
+                        <div class="overflow-auto rounded-xl bg-white/50 shadow-inner" style="max-height: 500px;">
+                            <table class="w-full text-sm text-left text-gray-600">
+                                <thead class="text-xs text-gray-700 uppercase bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0 shadow-sm">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-4 font-bold">Data/Hora (UTC)</th>
+                                        <th scope="col" class="px-6 py-4 font-bold">Matrícula</th>
+                                        <th scope="col" class="px-6 py-4 font-bold">Aeronave</th>
+                                        <th scope="col" class="px-6 py-4 font-bold">Destino</th>
+                                        <th scope="col" class="px-6 py-4 font-bold">Regra</th>
+                                        <th scope="col" class="px-6 py-4 font-bold">Pista</th>
+                                        <th scope="col" class="px-6 py-4 font-bold">Responsável</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dataTableBody">
+                                    <tr><td colspan="7" class="text-center p-8 text-gray-500">Nenhum dado carregado.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, addDoc, getDocs, query, where, onSnapshot, deleteDoc, doc, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqCKZJGZJGZJGZJGZJGZJGZJGZJGZJGZJ",
+            authDomain: "aeronautical-analysis.firebaseapp.com",
+            projectId: "aeronautical-analysis",
+            storageBucket: "aeronautical-analysis.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdefghijklmnopqrstuvwxyz"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'aeronautical-analysis';
+
+        // Variáveis globais
+        let currentFlightData = [];
+        let flightsByRuleChart = null;
+        let flightsByDestChart = null;
+        let hourlyFlightsChart = null;
+        let hourlyChartDataCache = [];
+        let unsubscribeFromFlights = null;
+
+        // Elementos DOM
+        const loginContainer = document.getElementById('login-container');
+        const appContainer = document.getElementById('app');
+        const loginForm = document.getElementById('login-form');
+        const registerButton = document.getElementById('register-button');
+        const logoutButton = document.getElementById('logout-button');
+        const userEmailSpan = document.getElementById('user-email');
+        const fileListSelect = document.getElementById('fileList');
+
+        // Função para mostrar toast
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+            
+            toastMessage.textContent = message;
+            
+            if (isError) {
+                toastIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>';
+            } else {
+                toastIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+            }
+            
+            toast.classList.remove('opacity-0', 'translate-x-full');
+            toast.classList.add('opacity-100', 'translate-x-0');
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-full');
+                toast.classList.remove('opacity-100', 'translate-x-0');
+            }, 4000);
+        }
+
+        // Autenticação
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginContainer.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                userEmailSpan.textContent = user.email;
+                loadFileList();
+            } else {
+                loginContainer.classList.remove('hidden');
+                appContainer.classList.add('hidden');
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('login-error');
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showToast('Login realizado com sucesso!');
+            } catch (error) {
+                errorDiv.textContent = 'Erro no login: ' + error.message;
+                showToast('Erro no login', true);
+            }
+        });
+
+        registerButton.addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('login-error');
+            
+            if (!email || !password) {
+                errorDiv.textContent = 'Preencha email e senha';
+                return;
+            }
+            
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                showToast('Conta criada com sucesso!');
+            } catch (error) {
+                errorDiv.textContent = 'Erro no registro: ' + error.message;
+                showToast('Erro no registro', true);
+            }
+        });
+
+        logoutButton.addEventListener('click', () => {
+            signOut(auth);
+            showToast('Logout realizado com sucesso!');
+        });
+
+        // Funções de manipulação de dados
+        function parseDataFile(content) {
+            const lines = content.split('\n').filter(line => line.trim());
+            const records = [];
+            
+            lines.forEach(line => {
+                const parts = line.split(/\s+/);
+                if (parts.length >= 7) {
+                    const dateStr = parts[0];
+                    const timeStr = parts[1];
+                    const matricula = parts[2];
+                    const tipoAeronave = parts[3];
+                    const destino = parts[4];
+                    const regraVoo = parts[5];
+                    const pista = parts[6];
+                    const responsavel = parts.slice(7).join(' ') || 'N/A';
+                    
+                    try {
+                        const timestamp = new Date(`${dateStr}T${timeStr}Z`);
+                        if (!isNaN(timestamp.getTime())) {
+                            records.push({
+                                timestamp,
+                                matricula,
+                                tipo_aeronave: tipoAeronave,
+                                destino,
+                                regra_voo: regraVoo,
+                                pista,
+                                responsavel
+                            });
+                        }
+                    } catch (error) {
+                        console.warn('Erro ao processar linha:', line, error);
+                    }
+                }
+            });
+            
+            return records;
+        }
+
+        async function uploadData(fileName, records) {
+            try {
+                const fileDocRef = await addDoc(collection(db, `/artifacts/${appId}/public/data/files`), {
+                    name: fileName,
+                    uploadedAt: new Date(),
+                    recordCount: records.length,
+                    userId: auth.currentUser.uid
+                });
+                
+                const recordsCollectionRef = collection(db, `/artifacts/${appId}/public/data/files/${fileDocRef.id}/records`);
+                
+                for (const record of records) {
+                    await addDoc(recordsCollectionRef, record);
+                }
+                
+                showToast(`Arquivo "${fileName}" salvo com ${records.length} registros!`);
+                loadFileList();
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                throw error;
+            }
+        }
+
+        async function loadFileList() {
+            try {
+                const filesCollectionRef = collection(db, `/artifacts/${appId}/public/data/files`);
+                const q = query(filesCollectionRef, orderBy('uploadedAt', 'desc'));
+                const querySnapshot = await getDocs(q);
+                
+                fileListSelect.innerHTML = '<option value="">Selecione um arquivo...</option>';
+                
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = `${data.name} (${data.recordCount} registros)`;
+                    fileListSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar lista de arquivos:", error);
+                showToast("Erro ao carregar lista de arquivos", true);
+            }
+        }
+
+        async function deleteFileAndRecords(fileId) {
+            try {
+                const recordsCollectionRef = collection(db, `/artifacts/${appId}/public/data/files/${fileId}/records`);
+                const recordsSnapshot = await getDocs(recordsCollectionRef);
+                
+                const deletePromises = recordsSnapshot.docs.map(recordDoc => deleteDoc(recordDoc.ref));
+                await Promise.all(deletePromises);
+                
+                await deleteDoc(doc(db, `/artifacts/${appId}/public/data/files`, fileId));
+                
+                showToast("Arquivo e registros deletados com sucesso!");
+                loadFileList();
+                renderTable([]);
+                renderStats([]);
+            } catch (error) {
+                console.error("Erro ao deletar:", error);
+                throw error;
+            }
+        }
+
+        function fetchAndRenderData() {
+            if (unsubscribeFromFlights) {
+                unsubscribeFromFlights();
+                unsubscribeFromFlights = null;
+            }
+
+            const selectedFileId = fileListSelect.value;
+            if (!selectedFileId) {
+                renderTable([]);
+                renderStats([]);
+                return;
+            }
+
+            const loadButton = document.getElementById('loadButton');
+            loadButton.disabled = true;
+            loadButton.textContent = 'Carregando...';
+            loadButton.classList.remove('btn-gradient-success');
+            loadButton.classList.add('bg-gray-500', 'cursor-not-allowed');
+
+            const recordsCollectionRef = collection(db, `/artifacts/${appId}/public/data/files/${selectedFileId}/records`);
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const filterValue = document.getElementById('filterValue').value.trim().toUpperCase();
+            
+            let q = query(recordsCollectionRef); 
+            if (startDate) q = query(q, where("timestamp", ">=", new Date(startDate)));
+            if (endDate) {
+                const endOfDay = new Date(endDate);
+                endOfDay.setUTCHours(23, 59, 59, 999);
+                q = query(q, where("timestamp", "<=", endOfDay));
+            }
+            
+            const tableBody = document.getElementById('dataTableBody');
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8 text-gray-500">Buscando dados...</td></tr>';
+            
+            unsubscribeFromFlights = onSnapshot(q, (snapshot) => {
+                let flights = [];
+                try {
+                    snapshot.forEach((doc) => {
+                        flights.push({ id: doc.id, ...doc.data() });
+                    });
+
+                    flights.sort((a, b) => {
+                        const timeA = a.timestamp ? a.timestamp.seconds : -1;
+                        const timeB = b.timestamp ? b.timestamp.seconds : -1;
+                        return timeB - timeA;
+                    });
+
+                    if (filterValue) {
+                        flights = flights.filter(f => 
+                            f.matricula.includes(filterValue) || 
+                            (f.destino && f.destino.includes(filterValue)) || 
+                            f.tipo_aeronave.includes(filterValue)
+                        );
+                    }
+                    renderTable(flights);
+                    renderStats(flights);
+                } catch (error) {
+                    console.error("Erro ao processar os dados recebidos:", error);
+                    showToast("Erro ao processar dados. Verifique o console.", true);
+                } finally {
+                    loadButton.disabled = false;
+                    loadButton.textContent = 'Carregar';
+                    loadButton.classList.add('btn-gradient-success');
+                    loadButton.classList.remove('bg-gray-500', 'cursor-not-allowed');
+                }
+            }, (error) => {
+                console.error("Erro ao buscar voos: ", error);
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8 text-red-500">Erro ao carregar dados. Verifique as permissões no Firebase.</td></tr>';
+                showToast("Erro ao carregar dados do arquivo.", true);
+                loadButton.disabled = false;
+                loadButton.textContent = 'Carregar';
+                loadButton.classList.add('btn-gradient-success');
+                loadButton.classList.remove('bg-gray-500', 'cursor-not-allowed');
+            });
+        }
+        
+        function renderTable(data) {
+            const tableBody = document.getElementById('dataTableBody');
+            tableBody.innerHTML = '';
+            currentFlightData = data;
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8 text-gray-500">Nenhum registro encontrado.</td></tr>';
+                return;
+            }
+            data.forEach((flight, index) => {
+                const date = flight.timestamp ? new Date(flight.timestamp.seconds * 1000) : null;
+                const formattedDateTime = date 
+                    ? date.toLocaleString('pt-BR', { timeZone: 'UTC', dateStyle: 'short', timeStyle: 'short' })
+                    : '<span class="text-red-500">Data Inválida</span>';
+
+                const rowClass = index % 2 === 0 ? 'bg-white/70' : 'bg-gray-50/70';
+                const row = `
+                    <tr class="${rowClass} border-b border-gray-200/50 hover:bg-blue-50/50 transition-colors duration-200">
+                        <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">${formattedDateTime}</td>
+                        <td class="px-6 py-4 text-gray-700">${flight.matricula}</td>
+                        <td class="px-6 py-4 text-gray-700">${flight.tipo_aeronave}</td>
+                        <td class="px-6 py-4 text-gray-700">${flight.destino}</td>
+                        <td class="px-6 py-4 text-gray-700">${flight.regra_voo}</td>
+                        <td class="px-6 py-4 text-gray-700">${flight.pista}</td>
+                        <td class="px-6 py-4 text-gray-700">${flight.responsavel}</td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        function renderStats(data) {
+            const totalVoosEl = document.getElementById('total-voos');
+            const voosComerciaisEl = document.getElementById('voos-comerciais');
+            const horarioPicoEl = document.getElementById('horario-pico');
+            const horarioOciosoEl = document.getElementById('horario-ocioso');
+            const picoOperadorEl = document.getElementById('pico-operador');
+
+            if (data.length === 0) {
+                totalVoosEl.textContent = '0';
+                voosComerciaisEl.textContent = '0';
+                horarioPicoEl.textContent = '-';
+                horarioOciosoEl.textContent = '-';
+                picoOperadorEl.textContent = '-';
+                if (flightsByRuleChart) { flightsByRuleChart.destroy(); flightsByRuleChart = null; }
+                if (flightsByDestChart) { flightsByDestChart.destroy(); flightsByDestChart = null; }
+                if (hourlyFlightsChart) { hourlyFlightsChart.destroy(); hourlyFlightsChart = null; }
+                return;
+            }
+
+            let voosComerciais = 0;
+            const commercialPrefixes = ['AZU', 'GLO', 'TAM'];
+            const flightsByDayHour = {};
+            const overallHourlyCounts = Array(24).fill(0);
+
+            data.forEach(flight => {
+                if (flight.timestamp && flight.timestamp.seconds) {
+                    const date = new Date(flight.timestamp.seconds * 1000);
+                    const hour = date.getUTCHours();
+                    overallHourlyCounts[hour]++;
+
+                    const dayHourKey = `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}-${hour}`;
+                    if (!flightsByDayHour[dayHourKey]) {
+                        flightsByDayHour[dayHourKey] = [];
+                    }
+                    flightsByDayHour[dayHourKey].push(flight);
+                }
+
+                if (commercialPrefixes.some(prefix => flight.matricula.startsWith(prefix))) {
+                    voosComerciais++;
+                }
+            });
+
+            let peakInfo = { count: 0, flights: [] };
+            for (const key in flightsByDayHour) {
+                if (flightsByDayHour[key].length > peakInfo.count) {
+                    peakInfo.count = flightsByDayHour[key].length;
+                    peakInfo.flights = flightsByDayHour[key];
+                }
+            }
+
+            let topOperator = '-';
+            if (peakInfo.count > 0) {
+                const operatorCounts = peakInfo.flights.reduce((acc, flight) => {
+                    acc[flight.responsavel] = (acc[flight.responsavel] || 0) + 1;
+                    return acc;
+                }, {});
+
+                let maxCount = 0;
+                let topOperators = [];
+                for (const op in operatorCounts) {
+                    if (operatorCounts[op] > maxCount) {
+                        maxCount = operatorCounts[op];
+                        topOperators = [op];
+                    } else if (operatorCounts[op] === maxCount) {
+                        topOperators.push(op);
+                    }
+                }
+                topOperator = topOperators.join(', ');
+            }
+
+            const maxVoosOverall = Math.max(...overallHourlyCounts);
+            const horariosPico = overallHourlyCounts.map((count, hour) => count === maxVoosOverall ? `${hour}:00h` : null).filter(h => h);
+            const minVoosOverall = Math.min(...overallHourlyCounts);
+            const horariosOciosos = overallHourlyCounts.map((count, hour) => count === minVoosOverall ? `${hour}:00h` : null).filter(h => h);
+
+            totalVoosEl.textContent = data.length;
+            voosComerciaisEl.textContent = voosComerciais;
+            horarioPicoEl.textContent = horariosPico.length > 0 ? horariosPico.join(', ') : '-';
+            horarioOciosoEl.textContent = horariosOciosos.length > 0 ? horariosOciosos.join(', ') : '-';
+            picoOperadorEl.textContent = topOperator;
+
+            const ruleCounts = data.reduce((acc, flight) => {
+                const rule = flight.regra_voo.includes('IV') ? 'IFR' : 'VFR';
+                acc[rule] = (acc[rule] || 0) + 1;
+                return acc;
+            }, { IFR: 0, VFR: 0 });
+
+            if (flightsByRuleChart) flightsByRuleChart.destroy();
+            flightsByRuleChart = new Chart(document.getElementById('flightsByRuleChart'), {
+                type: 'doughnut', 
+                data: { 
+                    labels: ['IFR', 'VFR'], 
+                    datasets: [{ 
+                        data: [ruleCounts.IFR, ruleCounts.VFR], 
+                        backgroundColor: ['#667eea', '#10b981'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const destCounts = data.reduce((acc, flight) => {
+                if(flight.destino && flight.destino !== 'N/A') acc[flight.destino] = (acc[flight.destino] || 0) + 1;
+                return acc;
+            }, {});
+            const sortedDests = Object.entries(destCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            
+            if (flightsByDestChart) flightsByDestChart.destroy();
+            flightsByDestChart = new Chart(document.getElementById('flightsByDestChart'), {
+                type: 'bar', 
+                data: { 
+                    labels: sortedDests.map(d => d[0]), 
+                    datasets: [{ 
+                        label: 'Nº de Voos', 
+                        data: sortedDests.map(d => d[1]), 
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }] 
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            hourlyChartDataCache = overallHourlyCounts;
+
+            const chartBody = document.getElementById('hourly-chart-body');
+            if(!chartBody.classList.contains('hidden')) {
+                renderHourlyChart();
+            }
+        }
+
+        function renderHourlyChart() {
+            if (hourlyFlightsChart) {
+                hourlyFlightsChart.destroy();
+                hourlyFlightsChart = null;
+            }
+            const hourlyLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+            hourlyFlightsChart = new Chart(document.getElementById('hourlyFlightsChart'), {
+                type: 'bar',
+                data: {
+                    labels: hourlyLabels,
+                    datasets: [{
+                        label: 'Nº de Voos',
+                        data: hourlyChartDataCache,
+                        backgroundColor: '#10b981',
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function exportToCsv() {
+            if (currentFlightData.length === 0) {
+                showToast("Não há dados para exportar.", true);
+                return;
+            }
+            const headers = ["timestamp_utc", "matricula", "tipo_aeronave", "destino", "regra_voo", "pista", "responsavel"];
+            let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+            currentFlightData.forEach(flight => {
+                const date = flight.timestamp ? new Date(flight.timestamp.seconds * 1000).toISOString() : "INVALID_TIMESTAMP";
+                csvContent += [date, flight.matricula, flight.tipo_aeronave, flight.destino, flight.regra_voo, flight.pista, flight.responsavel].join(",") + "\n";
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `export_voos_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("CSV exportado com sucesso!");
+        }
+
+        // Event Listeners
+        document.getElementById('uploadButton').addEventListener('click', () => {
+            const fileInput = document.getElementById('dataFile');
+            const statusDiv = document.getElementById('uploadStatus');
+            const uploadButton = document.getElementById('uploadButton');
+            if (fileInput.files.length === 0) { 
+                statusDiv.textContent = 'Selecione um arquivo.'; 
+                statusDiv.className = 'mt-3 text-center text-sm font-medium text-red-500'; 
+                return; 
+            }
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    statusDiv.textContent = 'Processando...'; 
+                    statusDiv.className = 'mt-3 text-center text-sm font-medium text-blue-600';
+                    uploadButton.disabled = true;
+                    const records = parseDataFile(event.target.result);
+                    if (records.length > 0) {
+                        statusDiv.textContent = `Enviando ${records.length} registros...`;
+                        await uploadData(file.name, records);
+                        statusDiv.textContent = '';
+                        fileInput.value = '';
+                    } else {
+                        statusDiv.textContent = 'Nenhum registro válido encontrado.'; 
+                        statusDiv.className = 'mt-3 text-center text-sm font-medium text-yellow-600';
+                    }
+                } catch (error) {
+                    console.error("Erro no upload:", error); 
+                    statusDiv.textContent = 'Erro ao processar.'; 
+                    statusDiv.className = 'mt-3 text-center text-sm font-medium text-red-500';
+                    showToast("Erro ao salvar o arquivo.", true);
+                } finally { 
+                    uploadButton.disabled = false; 
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('loadButton').addEventListener('click', fetchAndRenderData);
+        document.getElementById('filterButton').addEventListener('click', fetchAndRenderData);
+
+        document.getElementById('deleteButton').addEventListener('click', () => {
+            const selectedFileId = fileListSelect.value;
+            const selectedFileText = fileListSelect.options[fileListSelect.selectedIndex]?.text;
+            if (!selectedFileId) {
+                showToast("Por favor, selecione um arquivo da lista para deletar.", true);
+                return;
+            }
+            if (confirm(`Tem certeza que deseja deletar o arquivo "${selectedFileText}" e todos os seus registros? Esta ação não pode ser desfeita.`)) {
+                deleteFileAndRecords(selectedFileId).catch(err => {
+                    console.error("Erro ao deletar:", err);
+                    showToast("Erro ao deletar o arquivo.", true);
+                });
+            }
+        });
+
+        document.getElementById('clearFilterButton').addEventListener('click', () => {
+            document.getElementById('startDate').value = ''; 
+            document.getElementById('endDate').value = ''; 
+            document.getElementById('filterValue').value = '';
+            if (fileListSelect.value) {
+                fetchAndRenderData();
+            }
+        });
+        
+        document.getElementById('downloadCsvButton').addEventListener('click', exportToCsv);
+
+        document.getElementById('hourly-chart-header').addEventListener('click', () => {
+            const chartBody = document.getElementById('hourly-chart-body');
+            const header = document.getElementById('hourly-chart-header');
+            const isHidden = chartBody.classList.toggle('hidden');
+            header.classList.toggle('expanded');
+
+            if (!isHidden) {
+                renderHourlyChart();
+            }
+        });
+    </script>
+</body>
+</html>
+
