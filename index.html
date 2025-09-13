@@ -277,6 +277,7 @@
         let unsubscribeFromFlights;
         let unsubscribeFromFiles;
         let flightsByRuleChart, flightsByDestChart, hourlyFlightsChart;
+        let hourlyChartDataCache = [];
         
         // Elementos da UI
         const loginContainer = document.getElementById('login-container');
@@ -520,24 +521,32 @@
             tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8">Buscando dados...</td></tr>';
             
             unsubscribeFromFlights = onSnapshot(q, (snapshot) => {
-                let flights = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                let flights = [];
+                try {
+                    snapshot.forEach((doc) => {
+                        flights.push({ id: doc.id, ...doc.data() });
+                    });
 
-                // Ordenação no lado do cliente para lidar com timestamps nulos
-                flights.sort((a, b) => {
-                    const timeA = a.timestamp ? a.timestamp.seconds : -1;
-                    const timeB = b.timestamp ? b.timestamp.seconds : -1;
-                    return timeB - timeA;
-                });
+                    // Ordenação no lado do cliente para lidar com timestamps nulos
+                    flights.sort((a, b) => {
+                        const timeA = a.timestamp ? a.timestamp.seconds : -1;
+                        const timeB = b.timestamp ? b.timestamp.seconds : -1;
+                        return timeB - timeA;
+                    });
 
-                if (filterValue) {
-                    flights = flights.filter(f => 
-                        f.matricula.includes(filterValue) || 
-                        (f.destino && f.destino.includes(filterValue)) || 
-                        f.tipo_aeronave.includes(filterValue)
-                    );
+                    if (filterValue) {
+                        flights = flights.filter(f => 
+                            f.matricula.includes(filterValue) || 
+                            (f.destino && f.destino.includes(filterValue)) || 
+                            f.tipo_aeronave.includes(filterValue)
+                        );
+                    }
+                    renderTable(flights);
+                    renderStats(flights);
+                } catch (error) {
+                    console.error("Erro ao processar os dados recebidos:", error);
+                    showToast("Erro ao processar dados. Verifique o console.", true);
                 }
-                renderTable(flights);
-                renderStats(flights);
             }, (error) => {
                 console.error("Erro ao buscar voos: ", error);
                 tableBody.innerHTML = '<tr><td colspan="7" class="text-center p-8 text-red-500">Erro ao carregar dados. Verifique as permissões no Firebase.</td></tr>';
@@ -589,9 +598,9 @@
                 horarioPicoEl.textContent = '-';
                 horarioOciosoEl.textContent = '-';
                 picoOperadorEl.textContent = '-';
-                if (flightsByRuleChart) flightsByRuleChart.destroy();
-                if (flightsByDestChart) flightsByDestChart.destroy();
-                if (hourlyFlightsChart) hourlyFlightsChart.destroy();
+                if (flightsByRuleChart) { flightsByRuleChart.destroy(); flightsByRuleChart = null; }
+                if (flightsByDestChart) { flightsByDestChart.destroy(); flightsByDestChart = null; }
+                if (hourlyFlightsChart) { hourlyFlightsChart.destroy(); hourlyFlightsChart = null; }
                 return;
             }
 
@@ -602,7 +611,7 @@
             const overallHourlyCounts = Array(24).fill(0); // Para o gráfico de média mensal
 
             data.forEach(flight => {
-                if (flight.timestamp) {
+                if (flight.timestamp && flight.timestamp.seconds) {
                     const date = new Date(flight.timestamp.seconds * 1000);
                     const hour = date.getUTCHours();
                     overallHourlyCounts[hour]++;
@@ -688,15 +697,27 @@
                 options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
             });
 
+            hourlyChartDataCache = overallHourlyCounts; // Armazena os dados para o gráfico expansível
+
+            const chartBody = document.getElementById('hourly-chart-body');
+            if(!chartBody.classList.contains('hidden')) {
+                renderHourlyChart();
+            }
+        }
+
+        function renderHourlyChart() {
+            if (hourlyFlightsChart) {
+                hourlyFlightsChart.destroy();
+                hourlyFlightsChart = null;
+            }
             const hourlyLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
-            if (hourlyFlightsChart) hourlyFlightsChart.destroy();
             hourlyFlightsChart = new Chart(document.getElementById('hourlyFlightsChart'), {
                 type: 'bar',
                 data: {
                     labels: hourlyLabels,
                     datasets: [{
                         label: 'Nº de Voos',
-                        data: overallHourlyCounts,
+                        data: hourlyChartDataCache,
                         backgroundColor: '#10b981'
                     }]
                 },
@@ -789,8 +810,12 @@
         document.getElementById('hourly-chart-header').addEventListener('click', () => {
             const chartBody = document.getElementById('hourly-chart-body');
             const header = document.getElementById('hourly-chart-header');
-            chartBody.classList.toggle('hidden');
+            const isHidden = chartBody.classList.toggle('hidden');
             header.classList.toggle('expanded');
+
+            if (!isHidden) { // Se não estiver mais escondido, renderize o gráfico
+                renderHourlyChart();
+            }
         });
     </script>
 </body>
