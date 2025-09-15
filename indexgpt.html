@@ -201,27 +201,92 @@
     <div id="toast" class="fixed top-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-md opacity-0 transform translate-y-[-20px]">
         <p id="toast-message"></p>
     </div>
-</body>
-</html>
-<script type="module">
-   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-   import { getAuth, onAuthStateChanged, ... } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-   import { getFirestore, ... } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-   // configuração Firebase + lógica de login/logout
-   onAuthStateChanged(auth, user => {
-       if (user) {
-           loginContainer.classList.add('hidden');
-           appContainer.classList.remove('hidden');
-           userEmailSpan.textContent = user.email;
-           ...
-       } else {
-           appContainer.classList.add('hidden');
-           loginContainer.classList.remove('hidden');
-           ...
-       }
-   });
+    <!-- Script Firebase e lógica completa -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, writeBatch, query, where, orderBy, onSnapshot, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-   // resto da lógica de upload, filtros, gráficos...
-</script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBO0qk_81i9wrZPi3o_2SnPxOItB65cQeA",
+            authDomain: "movimento-aeronaves.firebaseapp.com",
+            projectId: "movimento-aeronaves",
+            storageBucket: "movimento-aeronaves.firebasestorage.app",
+            messagingSenderId: "217548855288",
+            appId: "1:217548855288:web:14ac15a979225bfacca80d",
+            measurementId: "G-XG0F0WK0K1"
+        };
+        const appId = firebaseConfig.projectId;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
 
+        let filesCollection;
+        let currentFlightData = [];
+        let unsubscribeFromFlights;
+        let unsubscribeFromFiles;
+        let flightsByRuleChart, flightsByDestChart, hourlyFlightsChart;
+        let hourlyChartDataCache = [];
+
+        const loginContainer = document.getElementById('login-container');
+        const appContainer = document.getElementById('app');
+        const userEmailSpan = document.getElementById('user-email');
+        const loginErrorDiv = document.getElementById('login-error');
+        const fileListSelect = document.getElementById('fileList');
+
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                loginContainer.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                userEmailSpan.textContent = user.email;
+                filesCollection = collection(db, `/artifacts/${appId}/public/data/files`);
+                fetchFilesList();
+            } else {
+                appContainer.classList.add('hidden');
+                loginContainer.classList.remove('hidden');
+                if (unsubscribeFromFlights) unsubscribeFromFlights();
+                if (unsubscribeFromFiles) unsubscribeFromFiles();
+                renderTable([]);
+                renderStats([]);
+            }
+        });
+
+        const handleAuth = async (authFunction, email, password) => {
+            loginErrorDiv.textContent = '';
+            try {
+                await authFunction(auth, email, password);
+            } catch (error) {
+                const errorMessages = {
+                    'auth/invalid-credential': 'Email ou senha inválidos.',
+                    'auth/wrong-password': 'Email ou senha inválidos.',
+                    'auth/email-already-in-use': 'Este email já está em uso.',
+                    'auth/weak-password': 'A senha deve ter pelo menos 6 caracteres.'
+                };
+                loginErrorDiv.textContent = errorMessages[error.code] || 'Ocorreu um erro. Tente novamente.';
+            }
+        };
+
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleAuth(signInWithEmailAndPassword, document.getElementById('email').value, document.getElementById('password').value);
+        });
+
+        document.getElementById('register-button').addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if (email && password) {
+                handleAuth(createUserWithEmailAndPassword, email, password);
+            } else {
+                loginErrorDiv.textContent = 'Preencha email e senha para se registrar.';
+            }
+        });
+
+        document.getElementById('logout-button').addEventListener('click', () => signOut(auth));
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.textContent = message;
+            toast.className
